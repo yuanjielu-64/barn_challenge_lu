@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+   <param name="use_gui" value="true"/>
+   <arg name="configs" default="robot" />
+   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find barn_challenge_lu)/rviz/localization.rviz" />
+   <arg name="scan_topic" default="$(eval optenv('JACKAL_LASER_TOPIC', 'front/scan'))" />
+
+</launch>

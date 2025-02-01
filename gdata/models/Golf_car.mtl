@@ -1,0 +1,98 @@
+newmtl GC_Susp_rear
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 1.000000 1.000000 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\GC_Susp_rear_BaseColor.tif
+    map_Pm Golf car/GC_Susp_rear_metallic.png
+    map_Pr Golf car/GC_Susp_rear_roughness.png
+newmtl GC_Body_1
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 0.137255 0.250980 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\JGMetal205.jpg
+    map_Pm Golf car/GC_Body_1_metallic.png
+    map_Pr Golf car/GC_Body_1_roughness.png
+newmtl GC_Dashboard
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 1.000000 1.000000 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\GC_Dashboard_BaseColor.tif
+    map_Pm Golf car/GC_Dashboard_metallic.png
+    map_Pr Golf car/GC_Dashboard_roughness.png
+newmtl GC_Seat
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 1.000000 1.000000 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\GC_Seat_BaseColor.tif
+    map_Pm Golf car/GC_Seat_metallic.png
+    map_Pr Golf car/GC_Seat_roughness.png
+newmtl GC_Top_Props
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 0.137255 0.250980 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\JGMetal205.jpg
+    map_Pm Golf car/GC_Top_Props_metallic.png
+    map_Pr Golf car/GC_Top_Props_roughness.png
+newmtl GC_Top_Props_Glass
+    Ns 19.999998
+    d 0.450000
+    Ka 0.200000 0.200000 0.200000
+    Kd 0.729412 0.729412 0.729412
+    Ks 0.200000 0.200000 0.200000
+    map_Pm Golf car/GC_Top_Props_Glass_metallic.png
+    map_Pr Golf car/GC_Top_Props_Glass_roughness.png
+newmtl GC_Sups_Front
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 1.000000 1.000000 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\GC_Sups_Front_BaseColor.tif
+    map_Pm Golf car/GC_Sups_Front_metallic.png
+    map_Pr Golf car/GC_Sups_Front_roughness.png
+newmtl GC_Wheel
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 1.000000 1.000000 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\GC_Wheel_BaseColor.tif
+    map_Pm Golf car/GC_Wheel_metallic.png
+    map_Pr Golf car/GC_Wheel_roughness.png
+newmtl GC_Florr
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 1.000000 1.000000 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\GC_Florr_BaseColor.tif
+    map_Pm Golf car/GC_Florr_metallic.png
+    map_Pr Golf car/GC_Florr_roughness.png
+newmtl GC_Shell_1
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 0.137255 0.250980 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\JGMetal205.jpg
+    map_Pm Golf car/GC_Shell_1_metallic.png
+    map_Pr Golf car/GC_Shell_1_roughness.png
+newmtl GC_Shell_2
+    Ns 20.000000
+    d 1.000000
+    Ka 0.200000 0.200000 0.200000
+    Kd 0.137255 0.250980 1.000000
+    Ks 0.200000 0.200000 0.200000
+    map_Kd D:\под сток\Golf car\Golf car.fbm\JGMetal205.jpg
+    map_Pm Golf car/GC_Shell_2_metallic.png
+    map_Pr Golf car/GC_Shell_2_roughness.png

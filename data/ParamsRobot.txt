@@ -1,0 +1,29 @@
+SimulatorRobot
+{
+   TimeStep 0.05
+   MinDistanceOneStep 0.1
+   MaxDistanceOneStep 0.2
+   DistanceReachedSteerPosition 0.1
+   StopDistance 0.2
+   StopExponent 6
+   
+   DrawPositionRadius 0.02
+   
+   RobotBodyLength 0.508
+   RobotBodyWidth  0.430
+   RobotWheelBase 0.277
+   RobotAttachDistance 0.01
+   RobotMinAngularVelocity -3
+   RobotMaxAngularVelocity 3
+   RobotMinAngularAcceleration -25
+   RobotMaxAngularAcceleration 25
+
+   RobotMinVelocity   0.0
+   RobotMaxVelocity   2.0
+   RobotMinAcceleration -20
+   RobotMaxAcceleration 20
+
+
+   CurrentState [0 0 0]
+}
+

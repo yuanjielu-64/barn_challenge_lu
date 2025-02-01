@@ -1,0 +1,28 @@
+SimulatorCarTrailers
+{
+   TimeStep 0.2
+   MinDistanceOneStep 0.5
+   MaxDistanceOneStep 0.8
+   DistanceReachedSteerPosition 1.0
+   StopDistance 2
+   StopExponent 6
+   
+   DrawPositionRadius 0.2
+   
+   CarFrontWheelDriving true
+   CarBodyLength 3.00
+   CarBodyWidth  3.00
+   CarNrTrailers 0
+   CarAttachDistance 0.01
+   CarMinSteerAngleInDegrees -85
+   CarMaxSteerAngleInDegrees  85
+   CarMinVelocity -2.25
+   CarMaxVelocity  2.25
+   CarMinAcceleration -1
+   CarMaxAcceleration 1
+   CarMinSteerVelocity -2.7
+   CarMaxSteerVelocity 2.7
+
+   CurrentState [ 0 0 0]
+}
+

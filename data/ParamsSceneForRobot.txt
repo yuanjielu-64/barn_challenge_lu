@@ -1,0 +1,15 @@
+UseScene Scene2D
+UseSimulator SimulatorRobot
+
+Scene2D
+{
+   ObstacleHeight 0.10
+}
+
+ParamsExtraFile data/ParamsPRM_2D.txt
+ParamsExtraFile data/ParamsRobot.txt
+ParamsExtraFile data/ParamsGeneral.txt
+ParamsExtraFile data/ParamsJuveForCar.txt
+ParamsExtraFile data/ParamsDromosForCar.txt
+ParamsExtraFile data/ParamsGraphics2D.txt
+ParamsExtraFile data/ParamsGenerateInstances.txt

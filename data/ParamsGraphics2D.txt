@@ -1,0 +1,29 @@
+Graphics
+{
+  Camera
+  {
+	Eye [ 1.156072396889 -17.316276417581 16.923459092132 ]
+	Center [ 0.000000000000 0.000000000000 0.000000000000 ]
+	Right [ 0.999337123377 0.002662276611 -0.036307383883 ]
+	Forward [ -0.027994066358 0.720539531584 -0.692848551758 ]
+  }
+
+  TextureObstaclesFile gdata/textures/terrain2.ppm
+
+  ColorObstacles [1.0 0.3 0.7]
+  ColorDecompositionRegionsCfg [0.4 0.0 0.7]
+  ColorDecompositionRegionsBorder [0.2 0.2 0.2]
+  ColorDecompositionRegionsInside [0.7 0.7 0.5]
+  ColorDecompositionSelectRegion [0.9 0.2 0.0]
+  ColorDecompositionRegionsEdges [0.7 0.7 0.2]
+  ColorSteer [1.0 1.0 0.0]
+
+  ColorGoalsRegionsCfg [0.4 0.7 0.0]
+  ColorGoalsRegionsBorder [0.2 0.2 0.2]
+  ColorGoalsRegionsInside [0.7 0.5 0.7]
+  ColorGoalsRegionsEdges [0.7 0.2 0.7]
+  ColorPathToGoal [0.4 0.2 0.4]
+
+  ColorMP [0.7 0.5 0.7]
+  ColorSolution [0.8 0.2 0.4]
+}

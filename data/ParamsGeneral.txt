@@ -1,0 +1,88 @@
+AdjustTimeBounds -1.0
+
+UseDecomposition DecompositionGrid
+UseProblem Problem
+UseMP Juve
+UseMap Maze
+UseGroupSelector GroupSelectorMaxWeight
+UseTourGenerator TourGeneratorLKH
+
+Milan
+{
+   ExtendMinNrSteps 20
+   ExtendMaxNrSteps 40
+   ExtendSteerProbability 0.9
+   SelectNearestVertexProbability 0.9
+}
+
+Sequential
+{
+   ExtendMinNrSteps 20
+   ExtendMaxNrSteps 40
+   ExtendSteerProbability 0.9
+   SelectNearestVertexProbability 0.9
+}
+
+
+RRT
+{
+   ExtendMinNrSteps 20
+   ExtendMaxNrSteps 40
+   ExtendSteerProbability 0.8
+   SelectNearestVertexProbability 0.9
+}
+
+GroupSelectorMaxWeight
+{
+}
+
+GroupSelectorProbabilityUniform
+{
+}
+
+
+TourGeneratorLKH
+{
+}
+
+
+TourGeneratorPDDL
+{
+}
+
+TourGeneratorBNB
+{
+}
+
+TourGeneratorMC
+{
+}
+
+TourGeneratorRandom
+{
+}
+
+TourGeneratorOptimal
+{
+}
+
+DecompositionTriangles
+{
+    ScaleFactorForCollisionStatus 1.0
+    TriangleMinArea 0.05
+    TriangleAvgArea 3.0
+}
+
+DecompositionGrid
+{
+    ScaleFactorForCollisionStatus 1.0
+}
+
+GenerateInstances
+{
+    NrGoals 5
+    
+    WriteToFile data/problem.txt
+}
+
+

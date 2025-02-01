@@ -1,0 +1,19 @@
+Dromos
+{
+   UsePredictions false
+   ExtendMinNrSteps 5
+   ExtendMaxNrSteps 20
+   ExtendSteerProbability 0.99
+   SelectNearestVertexProbability 0.5
+   DiscountSelect 0.95
+   CounterFromFollowToExplore 100
+   CounterFromExploreToFollow 20
+   
+   Follow
+   {
+	WeightBase 4.0
+	ReachTolerance 0.2
+	SamplingBias 0.5
+	Radius 0.3
+   }
+}

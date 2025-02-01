@@ -1,0 +1,19 @@
+RRT
+{  
+   UsePredictions false
+   ExtendMinNrSteps 20
+   ExtendMaxNrSteps 40
+   ExtendSteerProbability 0.99
+   SelectNearestVertexProbability 0.5
+   DiscountSelect 0.95
+   CounterFromFollowToExplore 100
+   CounterFromExploreToFollow 20
+
+   Follow
+   {
+	WeightBase 4.0
+	ReachTolerance 2.0
+	SamplingBias 0.5
+	Radius 3
+   }
+}
