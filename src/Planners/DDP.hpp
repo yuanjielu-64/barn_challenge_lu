@@ -24,6 +24,8 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <atomic>
+
 #include "Utils/Timer.hpp"
 #include "Utils/Stats.hpp"
 #include <random>
@@ -49,7 +51,7 @@ namespace Antipatrea {
             Cost();
 
             Cost(double obs_cost, double to_goal_cost, double speed_cost, double path_cost, double ori_cost,
-                 double aw_cost,
+                 double aw_cost, double space_cos,
                  double total_cost);
 
             void show() const;
@@ -62,6 +64,7 @@ namespace Antipatrea {
             double path_cost_;
             double ori_cost_;
             double aw_cost_;
+            double space_cost_;
 
             double total_cost_;
         };
@@ -151,9 +154,11 @@ namespace Antipatrea {
         virtual void motion(PoseState &state, double velocity, double angular_velocity, double t);
 
         virtual void process_segment(int thread_id, int start, int end, PoseState &state, PoseState &state_odom, Window &dw,
-                                     std::vector<std::pair<double, double>> &pairs, std::vector<Cost> &thread_costs,
+                                     std::vector<std::pair<double, double>> &pairs,
+                                     std::vector<Cost> &thread_costs,
                                      std::vector<std::pair<std::vector<PoseState>, std::vector<PoseState> > > &
-                                     thread_trajectories);
+                                     thread_trajectories,
+                                     std::vector<std::vector<std::pair<double, double>>> &thread_pairs);
 
         virtual std::vector<double> calculateSGCoefficients(int window_size, int poly_order);
 
@@ -198,6 +203,10 @@ namespace Antipatrea {
 
         virtual double calc_obs_cost(const std::vector<PoseState> &traj);
 
+        virtual double calc_obs_cost(const std::vector<PoseState> &traj, double &t);
+
+        virtual double pointToSegmentDistance(const PoseState& p1, const PoseState& p2, const std::vector<double>& o);
+
         virtual double calc_ori_cost(const std::vector<PoseState> &traj);
 
         virtual double calc_angular_velocity(const std::vector<PoseState> &traj);
@@ -212,11 +221,14 @@ namespace Antipatrea {
 
         virtual double normalizeAngle(double angle);
 
+        std::atomic<bool> timeout_flag{false};
+
         bool use_goal_cost_ = false;
         bool use_speed_cost_ = false;
         bool use_path_cost_ = false;
         bool use_ori_cost_ = false;
         bool use_angular_cost_ = false;
+        bool use_space_cost_ = false;
 
         double angle_to_goal_ = M_PI / 2;
 
@@ -250,6 +262,7 @@ namespace Antipatrea {
         double path_cost_gain_ = 0.4;
         double ori_cost_gain_ = 0.3;
         double aw_cost_gain_ = 0.2;
+        double space_cost_gain_ = 0.5;
 
         double delta_v_sum = FLT_MIN;
         double delta_w_sum = FLT_MIN;

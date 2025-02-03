@@ -98,9 +98,11 @@ extern "C" int RunMP(int argc, char **argv) {
         }
 
         if (Timer::Elapsed(start_time) >= 0.05) {
-            ROS_ERROR_THROTTLE(1.0, "task execution > 0.5!!!");
-            Logger::m_out << "Task execution cost: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
+            ROS_ERROR_THROTTLE(0.5, "task execution > 0.5!!!");
+            // Logger::m_out << "Task execution cost: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
         }
+
+        Logger::m_out << "Task execution cost: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
 
         // Logger::m_out << std::endl;
 

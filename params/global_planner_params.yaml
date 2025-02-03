@@ -1,0 +1,6 @@
+GlobalPlanner:
+  old_navfn_behavior: false
+  use_dijkstra: true
+  cost_factor: 3.0
+  lethal_cost: 254.0
+  planner_tolerance: 1

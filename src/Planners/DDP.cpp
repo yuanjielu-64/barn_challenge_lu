@@ -83,7 +83,7 @@ namespace Antipatrea {
 //        ROS_INFO("best_traj.first.front().angular_velocity_: %f", best_traj.first[5].angular_velocity_);
         if (!result) {
             // robot->setRobotState(Robot_config::BRAKE_PLANNING);
-            publishCommand(cmd_vel, 0.14, 0);
+            publishCommand(cmd_vel, best_traj.first[3].velocity_ / 4, best_traj.first[3].angular_velocity_ / 4);
         } else
             publishCommand(cmd_vel, best_traj.first[3].velocity_ , best_traj.first[3].angular_velocity_);
 
@@ -241,7 +241,7 @@ namespace Antipatrea {
 
         double best_theta = 0.0;
 
-        Cost min_cost(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1e6);
+        Cost min_cost(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1e6);
 
         if (available_traj_count == 0) {
             ROS_ERROR_THROTTLE(1.0, "When a collision occurs, the robot cannot find any path during rotation");
@@ -301,156 +301,60 @@ namespace Antipatrea {
             0.1486, 0.1548, 0.1610, 0.1670
         };
 
-        Cost min_cost(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1e6);
+        best_traj.first.reserve(nr_steps_);
+
+        Cost min_cost(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1e6);
 
         Window dw = calc_dynamic_window(state, dt);
-
-        std::vector<std::pair<double, double> > pairs;
 
         unsigned int max_threads = std::thread::hardware_concurrency();
         num_threads = std::min(16, static_cast<int>(max_threads));
 
         std::vector<std::vector<Cost>> thread_costs(num_threads);
         std::vector<std::vector<std::pair<std::vector<PoseState>, std::vector<PoseState>>>> thread_trajectories(num_threads);
+        std::vector<std::vector<std::vector<std::pair<double, double>>>> thread_pairs(num_threads);
 
         int task_per_thread = nr_pairs_ / num_threads;
         nr_pairs_ = task_per_thread * num_threads;
 
+        std::vector<std::pair<double, double>> pairs;
         pairs.reserve(nr_pairs_);
         double linear_velocity;
         double angular_velocity;
-        for (int i = 0; i < nr_pairs_; ++i) {
-            if (RandomUniformReal(0, 1) < 0.2 && delta_v_sum != FLT_MIN && delta_w_sum != FLT_MAX) {
-                linear_velocity = delta_v_sum;
-                angular_velocity = delta_w_sum;
-            }else {
-                linear_velocity = RandomUniformReal(dw.min_velocity_, dw.max_velocity_);
-                angular_velocity = RandomUniformReal(dw.min_angular_velocity_, dw.max_angular_velocity_);
+
+        if (robot->getRobotState() == Robot_config::LOW_SPEED_PLANNING) {
+            for (int i = 0; i < nr_pairs_; ++i) {
+                if (RandomUniformReal(0, 1) < 0.05 && delta_v_sum != FLT_MIN && delta_w_sum != FLT_MAX) {
+                    linear_velocity = delta_v_sum;
+                    angular_velocity = delta_w_sum;
+                }else {
+                    linear_velocity = RandomUniformReal(dw.min_velocity_, dw.max_velocity_);
+                    angular_velocity = RandomUniformReal(dw.min_angular_velocity_, dw.max_angular_velocity_);
+                }
+                pairs.emplace_back(linear_velocity, angular_velocity);
             }
-            pairs.emplace_back(linear_velocity, angular_velocity);
+
+            // for (int i = 0; i < 10; ++i) {
+            //     angular_velocity = RandomUniformReal(dw.min_angular_velocity_, dw.max_angular_velocity_);
+            //
+            //     pairs.emplace_back(0.0, angular_velocity);
+            // }
+
+        }else {
+            for (int i = 0; i < nr_pairs_; ++i) {
+                if (RandomUniformReal(0, 1) < 0.05 && delta_v_sum != FLT_MIN && delta_w_sum != FLT_MAX) {
+                    linear_velocity = delta_v_sum;
+                    angular_velocity = delta_w_sum;
+                }else {
+                    linear_velocity = RandomUniformReal(dw.min_velocity_, dw.max_velocity_);
+                    angular_velocity = RandomUniformReal(dw.min_angular_velocity_, dw.max_angular_velocity_);
+                }
+                pairs.emplace_back(linear_velocity, angular_velocity);
+            }
         }
 
-        // std::vector<std::future<void>> futures;
-        // for (int i = 0; i < num_threads; ++i) {
-        //     int start = i * task_per_thread;
-        //     int end = (i == num_threads - 1) ? nr_pairs_ : (start + task_per_thread);
-        //
-        //     thread_costs[i].reserve(end - start);
-        //     thread_trajectories[i].reserve(end - start);
-        //
-        //     futures.emplace_back(std::async(std::launch::async, [this, i, start, end, &state, &state_odom, &dw, &pairs,
-        //                                                           &thread_costs, &thread_trajectories]() {
-        //         this->process_segment(i, start, end, state, state_odom, dw, pairs,
-        //                               thread_costs[i], thread_trajectories[i]);
-        //     }));
-        // }
-        //
-        // for (auto &future : futures) {
-        //     future.get();
-        // }
-
-        // Logger::m_out << "multi_thread_1 " << Timer::Elapsed(d_t) << std::endl;
-
-
-
-
-
-
-        // std::vector<Cost> costs;
-        // std::vector<std::pair<std::vector<PoseState>, std::vector<PoseState>>> trajectories;
-        //
-        // size_t total_costs = 0;
-        // for (const auto &c : thread_costs) total_costs += c.size();
-        // costs.reserve(total_costs);
-        // trajectories.reserve(total_costs);
-        //
-        // for (int i = 0; i < num_threads; ++i) {
-        //     costs.insert(costs.end(), thread_costs[i].begin(), thread_costs[i].end());
-        //     trajectories.insert(trajectories.end(), thread_trajectories[i].begin(), thread_trajectories[i].end());
-        // }
-        //
-        // auto valid_end = std::remove_if(costs.begin(), costs.end(), [](const Cost &c) {
-        //     return c.obs_cost_ == 1e6 || c.path_cost_ == 1e6;
-        // });
-        // costs.erase(valid_end, costs.end());
-        //
-        // Logger::m_out << "available trajectory count: " << costs.size() << std::endl;
-        //
-        // if (costs.empty()) {
-        //     ROS_ERROR_THROTTLE(1.0, "No available trajectory after cleaning.");
-        //     best_traj.second = false;
-        //     return false;
-        // }
-        //
-        // // ** 归一化成本 **
-        // normalize_costs(costs);
-        //
-        // const size_t max_elements = 15;
-        // const size_t top_n = std::min(max_elements, costs.size());
-        //
-        // std::vector<size_t> indices(costs.size());
-        // std::iota(indices.begin(), indices.end(), 0);
-        //
-        // // ** 仅对前 top_n 进行 partial_sort，加速排序 **
-        // std::partial_sort(indices.begin(), indices.begin() + top_n, indices.end(), [&](size_t i, size_t j) {
-        //     return costs[i].total_cost_ < costs[j].total_cost_;
-        // });
-        //
-        // double J_min = costs[indices[0]].total_cost_;
-        // std::vector<double> costs_weights(top_n, 0.0);
-        // const double lambda = 1.0;
-        // double weight_sum = 0.0;
-        //
-        // // ** 计算带指数权重的代价 **
-        // double p = 2;
-        // for (size_t k = 0; k < top_n; ++k) {
-        //     double normalized_step = static_cast<double>(top_n - k) / static_cast<double>(top_n);
-        //     double ws = pow(normalized_step, p);
-        //
-        //     size_t idx = indices[k];
-        //     costs_weights[k] = std::exp(-(costs[idx].total_cost_ - J_min) / lambda) * ws;
-        //     weight_sum += costs_weights[k];
-        // }
-        //
-        // // ** 避免除零错误 **
-        // if (weight_sum > 1e-6) {
-        //     for (double &weight : costs_weights) {
-        //         weight /= weight_sum;
-        //     }
-        // } else {
-        //     ROS_ERROR("Weight sum is zero. Check cost calculation.");
-        //     return false;
-        // }
-        //
-        // double size_2 = robot->getSize()[2];
-        // double size_3 = robot->getSize()[3];
-        // double size_4 = robot->getSize()[4];
-        // double size_5 = robot->getSize()[5];
-        //
-        // delta_v_sum = 0.0;
-        // delta_w_sum = 0.0;
-        //
-        // for (size_t k = 0; k < top_n; ++k) {
-        //     size_t idx = indices[k];
-        //     delta_v_sum += costs_weights[k] * pairs[idx].first;
-        //     delta_w_sum += costs_weights[k] * pairs[idx].second;
-        // }
-        //
-        // delta_v_sum = std::clamp(delta_v_sum, size_2, size_3);
-        // delta_w_sum = std::clamp(delta_w_sum, size_4, size_5);
-        //
-        // best_traj.first = generateTrajectory(state, state_odom, delta_v_sum, delta_w_sum).first;
-        // best_traj.second = true;
-        //
-        // Logger::m_out << "multi_thread_2 " << Timer::Elapsed(d_t) << std::endl;
-        // return true;
-
-        //
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
-
-        best_traj.first.reserve(nr_steps_);
-
 
         for (int i = 0; i < num_threads; ++i) {
             int start = i * task_per_thread;
@@ -458,12 +362,13 @@ namespace Antipatrea {
 
             thread_costs[i].reserve(end - start);
             thread_trajectories[i].reserve(end - start);
+            thread_pairs[i].reserve(end - start);
 
             threads.emplace_back(
                 [this, i, start, end, &state, &state_odom, &dw, &pairs,
-                    &thread_costs, &thread_trajectories]() {
+                    &thread_costs, &thread_trajectories, &thread_pairs]() {
                     this->process_segment(i, start, end, state, state_odom, dw, pairs,
-                                          thread_costs[i], thread_trajectories[i]);
+                                          thread_costs[i], thread_trajectories[i], thread_pairs[i]);
                 });
         }
 
@@ -476,69 +381,14 @@ namespace Antipatrea {
         std::vector<Cost> costs;
         std::vector<std::pair<std::vector<PoseState>, std::vector<PoseState> > >
                 trajectories;
+        std::vector<std::vector<std::pair<double, double>>> pairs_set;
 
         for (int i = 0; i < num_threads; ++i) {
             costs.insert(costs.end(), thread_costs[i].begin(), thread_costs[i].end());
             trajectories.insert(trajectories.end(), thread_trajectories[i].begin(), thread_trajectories[i].end());
+            pairs_set.insert(pairs_set.end(), thread_pairs[i].begin(), thread_pairs[i].end());
         }
-
         // Logger::m_out << "multi_thread_2 " << Timer::Elapsed(d_t) << std::endl;
-
-        // auto cost_it = costs.begin();
-        // auto traj_it = trajectories.begin();
-        // auto pairs_it = pairs.begin();
-        //
-        // while (cost_it != costs.end() && traj_it != trajectories.end() && pairs_it != pairs.end()) {
-        //     if (cost_it->obs_cost_ == 1e6 || cost_it->path_cost_ == 1e6) {
-        //         cost_it = costs.erase(cost_it);
-        //         traj_it = trajectories.erase(traj_it);
-        //         pairs_it = pairs.erase(pairs_it);
-        //     } else {
-        //         ++cost_it;
-        //         ++traj_it;
-        //         ++pairs_it;
-        //     }
-        // }
-        //
-        // if (costs.empty()) {
-        //     ROS_ERROR_THROTTLE(1.0, "No available trajectory after cleaning.");
-        //     best_traj.second = false;
-        //     return false;
-        // }
-        // 过滤无效元素 (O(N) 复杂度)
-        auto is_invalid = [](const Cost &c) { return c.obs_cost_ == 1e6 || c.path_cost_ == 1e6; };
-
-        // **同时处理 costs, trajectories, pairs**
-        std::vector<size_t> valid_indices;
-        valid_indices.reserve(costs.size());
-
-        for (size_t i = 0; i < costs.size(); ++i) {
-            if (!is_invalid(costs[i])) {
-                valid_indices.push_back(i);
-            }
-        }
-
-        // **构造新数组 (O(N) 复杂度)**
-        std::vector<Cost> filtered_costs;
-        std::vector<std::pair<std::vector<PoseState>, std::vector<PoseState>>> filtered_trajectories;
-        std::vector<std::pair<double, double>> filtered_pairs;
-
-        filtered_costs.reserve(valid_indices.size());
-        filtered_trajectories.reserve(valid_indices.size());
-        filtered_pairs.reserve(valid_indices.size());
-
-        for (size_t i : valid_indices) {
-            filtered_costs.push_back(std::move(costs[i]));
-            filtered_trajectories.push_back(std::move(trajectories[i]));
-            filtered_pairs.push_back(std::move(pairs[i]));
-        }
-
-        // **替换原始数组 (O(1))**
-        costs = std::move(filtered_costs);
-        trajectories = std::move(filtered_trajectories);
-        pairs = std::move(filtered_pairs);
-
-        // Logger::m_out << "available trajectory count: " << costs.size() << std::endl;
 
         if (costs.empty()) {
             ROS_ERROR_THROTTLE(1.0, "No available trajectory after cleaning.");
@@ -548,8 +398,6 @@ namespace Antipatrea {
 
         // Logger::m_out << "multi_thread_2 " << Timer::Elapsed(d_t) << std::endl;
 
-
-        //Logger::m_out << "available trajectory " << available_traj_count << std::endl;
         normalize_costs(costs);
 
         const size_t max_elements = 10;
@@ -562,8 +410,7 @@ namespace Antipatrea {
             return costs[i].total_cost_ < costs[j].total_cost_;
         });
 
-
-        // robot->viewTrajectories(trajectories[indices[2]].second, nr_steps_, timeInterval);
+        robot->viewTrajectories(trajectories[indices[0]].second, nr_steps_, timeInterval);
 
         // double dist = -1;
         // std::vector<double> last_position;
@@ -605,8 +452,10 @@ namespace Antipatrea {
 
         for (size_t k = 0; k < top_n && k < indices.size(); ++k) {
             size_t idx = indices[k];
-            delta_v_sum += costs_weights[k] * pairs[idx].first;
-            delta_w_sum += costs_weights[k] * pairs[idx].second;
+            for (size_t j = 0; j < nr_steps_; ++j) {
+                delta_v_sum += costs_weights[k] * pairs_set[idx][j].first * timeInterval[j] / 2.0;
+                delta_w_sum += costs_weights[k] * pairs_set[idx][j].second * timeInterval[j] / 2.0;
+            }
         }
 
         delta_v_sum = std::clamp(delta_v_sum, robot->getSize()[2], robot->getSize()[3]);
@@ -616,7 +465,7 @@ namespace Antipatrea {
 
         best_traj.second = true;
 
-        // Logger::m_out << "multi_thread_3 " << Timer::Elapsed(d_t) << std::endl;
+        Logger::m_out << "multi_thread_3 " << Timer::Elapsed(d_t) << std::endl;
 
         return true;
     }
@@ -626,15 +475,25 @@ namespace Antipatrea {
                                          std::vector<std::pair<double, double> > &pairs,
                                          std::vector<Cost> &thread_costs,
                                          std::vector<std::pair<std::vector<PoseState>, std::vector<
-                                             PoseState> > > &thread_trajectories) {
-        Timer::Clock d_t;
-        Timer::Start(d_t);
+                                             PoseState> > > &thread_trajectories,
+                                             std::vector<std::vector<std::pair<double, double>>> &thread_pairs) {
+
+        auto start_time = std::chrono::high_resolution_clock::now();
+
+        static thread_local std::mt19937 gen(std::random_device{}());
+        std::normal_distribution<double> linear_dist(0.0, linear_stddev);
+        std::normal_distribution<double> angular_dist(0.0, angular_stddev);
 
         for (int i = start; i < end; ++i) {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::normal_distribution<double> linear_dist(0.0, linear_stddev);
-            std::normal_distribution<double> angular_dist(0.0, angular_stddev);
+            if (timeout_flag.load()) break;
+
+            auto elapsed_time = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start_time).count();
+            if (elapsed_time >= 0.040) {
+                Logger::m_out << "chao shi " << std::endl;
+                timeout_flag.store(true);
+                break;
+            }
+
             std::vector<std::pair<double, double> > perturbations(nr_steps_);
             double dist = -1;
             std::vector<double> last_position;
@@ -656,14 +515,16 @@ namespace Antipatrea {
             trajectories = generateTrajectory(state, state_odom, perturbations);
             // robot->viewTrajectories(trajectories.first, nr_steps_, 0.0, timeInterval);
 
-            // getTrajBySavitzkyGolayFilter(trajectories);
             const Cost cost = evaluate_trajectory(trajectories, dist, last_position);
 
-            thread_costs.emplace_back(cost);
-            thread_trajectories.emplace_back(trajectories);
+            if (cost.obs_cost_ != 1e6 && cost.path_cost_ != 1e6 && cost.ori_cost_ != 1e6) {
+                thread_pairs.emplace_back(perturbations);
+                thread_costs.emplace_back(cost);
+                thread_trajectories.emplace_back(trajectories);
+            }
+
         }
     }
-
 
     bool DDP::hasRotateFirst(PoseState &state, PoseState &state_odom,
                                         double angle_to_goal) {
@@ -819,7 +680,6 @@ namespace Antipatrea {
     std::vector<double> DDP::savitzkyGolayFilter(const std::vector<double> &data, int window_size,
                                                             int poly_order) {
         std::vector<double> coefficients = {-0.0952, 0.1429, 0.2857, 0.3333, 0.2857, 0.1429, -0.0952};
-        //std::vector<double> coefficients = calculateSGCoefficients(window_size, poly_order);
         int half_window = window_size / 2;
 
         std::vector<double> smoothed_data(data.size(), 0.0);
@@ -842,8 +702,6 @@ namespace Antipatrea {
         double w = updateVelocity(state.angular_velocity_, angular_velocity, maxAngularAccelerSpeed,
                                   minAngularAccelerSpeed, t);
 
-
-
         state.theta_ += w * t;
         state.x_ += v * cos(state.theta_) * t;
         state.y_ += v * sin(state.theta_) * t;
@@ -854,10 +712,10 @@ namespace Antipatrea {
     }
 
     void DDP::normalize_costs(std::vector<DDP::Cost> &costs) {
-        Cost min_cost(1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6), max_cost;
+        Cost min_cost(1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 1e6), max_cost;
 
         for (const auto &cost: costs) {
-            if (cost.obs_cost_ != 1e6) {
+            if (cost.obs_cost_ != 1e6 && cost.path_cost_ != 1e6 && cost.ori_cost_ != 1e6) {
                 min_cost.obs_cost_ = std::min(min_cost.obs_cost_, cost.obs_cost_);
                 max_cost.obs_cost_ = std::max(max_cost.obs_cost_, cost.obs_cost_);
                 if (use_goal_cost_) {
@@ -880,33 +738,48 @@ namespace Antipatrea {
                     min_cost.aw_cost_ = std::min(min_cost.aw_cost_, cost.aw_cost_);
                     max_cost.aw_cost_ = std::max(max_cost.aw_cost_, cost.aw_cost_);
                 }
+
+                if (use_space_cost_) {
+                    min_cost.space_cost_ = std::min(min_cost.space_cost_, cost.space_cost_);
+                    max_cost.space_cost_ = std::max(max_cost.space_cost_, cost.space_cost_);
+                }
             }
         }
 
         for (auto &cost: costs) {
-            if (cost.obs_cost_ != 1e6) {
+            if (cost.obs_cost_ != 1e6 && cost.path_cost_ != 1e6 && cost.ori_cost_ != 1e6) {
                 cost.obs_cost_ =
                         (cost.obs_cost_ - min_cost.obs_cost_) / (max_cost.obs_cost_ - min_cost.obs_cost_ + DBL_EPSILON);
+
                 if (use_goal_cost_) {
                     cost.to_goal_cost_ = (cost.to_goal_cost_ - min_cost.to_goal_cost_) /
                                          (max_cost.to_goal_cost_ - min_cost.to_goal_cost_ + DBL_EPSILON);
                 }
+
                 if (use_ori_cost_)
                     cost.ori_cost_ =
                             (cost.ori_cost_ - min_cost.ori_cost_) /
                             (max_cost.ori_cost_ - min_cost.ori_cost_ + DBL_EPSILON);
+
                 if (use_speed_cost_)
                     cost.speed_cost_ =
                             (cost.speed_cost_ - min_cost.speed_cost_) /
                             (max_cost.speed_cost_ - min_cost.speed_cost_ + DBL_EPSILON);
+
                 if (use_path_cost_)
                     cost.path_cost_ =
                             (cost.path_cost_ - min_cost.path_cost_) /
                             (max_cost.path_cost_ - min_cost.path_cost_ + DBL_EPSILON);
+
                 if (use_angular_cost_)
                     cost.aw_cost_ =
                             (cost.aw_cost_ - min_cost.aw_cost_) /
                             (max_cost.aw_cost_ - min_cost.aw_cost_ + DBL_EPSILON);
+
+                if (use_space_cost_)
+                    cost.space_cost_ =
+                            (cost.space_cost_ - min_cost.space_cost_) /
+                            (max_cost.space_cost_ - min_cost.space_cost_ + DBL_EPSILON);
 
                 cost.to_goal_cost_ *= to_goal_cost_gain_;
                 cost.obs_cost_ *= obs_cost_gain_;
@@ -914,6 +787,7 @@ namespace Antipatrea {
                 cost.path_cost_ *= path_cost_gain_;
                 cost.ori_cost_ *= ori_cost_gain_;
                 cost.aw_cost_ *= aw_cost_gain_;
+                cost.space_cost_ *= space_cost_gain_;
                 cost.calc_total_cost();
             }
         }
@@ -961,8 +835,6 @@ namespace Antipatrea {
     }
 
     double DDP::calc_path_cost(const std::vector<PoseState> &traj) {
-        if (!use_path_cost_)
-            return 0.0;
 
         double d = 0;
         for (int i = 0; i < traj.size() - 2; i++)
@@ -971,10 +843,12 @@ namespace Antipatrea {
         if (d <= distance)
             return 1e6;
 
+        if (!use_path_cost_)
+            return 0.0;
+
         std::vector<std::vector<double>> local_path = robot->local_paths;
         if (local_path.empty()) {
-            // std::cerr << "Local path is empty!" << std::endl;
-            return 0;
+            return 0.0;
         }
 
         int i = 0;
@@ -989,20 +863,23 @@ namespace Antipatrea {
                     min_distance = distance;
                 }
             }
-            d += min_distance * weights[i]; // Add the minimum distance to total
+            d += min_distance; // Add the minimum distance to total
             i++;
         }
 
-        return d;
+        return d / (double) traj.size();
     }
 
     double DDP::calc_ori_cost(const std::vector<PoseState> &traj) {
         if (!use_ori_cost_)
             return 0.0;
 
-        double theta = calculateTheta(traj[traj.size() - 1], &local_goal[0]);
+        double theta = 0;
 
-        return fabs(theta);
+        for (int i = int (2 * traj.size() / 4); i < traj.size() - 1; i++)
+            theta += fabs(calculateTheta(traj[i], &local_goal[0]));
+
+        return theta / int (2 * traj.size() / 4);;
     }
 
     double DDP::calc_angular_velocity(const std::vector<PoseState> &traj) {
@@ -1044,11 +921,11 @@ namespace Antipatrea {
             return 0.0;
 
         double d = 0;
-        for (int i = 15; i < traj.size() - 1; i++) {
+        for (int i = int (3 * traj.size() / 4); i < traj.size() - 1; i++) {
             d += Algebra::PointDistance(2, &traj[i].pose()[0], &local_goal[0]);
         }
 
-        return d / 5;
+        return d / int (1 * traj.size() / 4);
 
         // return Algebra::PointDistance(2, &traj[traj.size() - 1].pose()[0], &local_goal[0]);
 
@@ -1066,6 +943,113 @@ namespace Antipatrea {
                1000;
     }
 
+    double DDP::pointToSegmentDistance(const PoseState& p1, const PoseState& p2, const std::vector<double>& o) {
+        double dx = p2.x_ - p1.x_;
+        double dy = p2.y_ - p1.y_;
+
+        std::vector<double> info = robot->getSize();
+        double half_length = info[0] / 2.0;
+        double half_width = info[1] / 2.0;
+
+        double t = ((o[0] - p1.x_) * dx + (o[1] - p1.y_) * dy) / (dx * dx + dy * dy);
+
+        double theta = atan2(dy, dx);
+        double cosTheta = cos(theta);
+        double sinTheta = sin(theta);
+
+        double closestX, closestY;
+        if (t < 0) {
+            closestX = p1.x_;
+            closestY = p1.y_;
+        } else if (t > 1) {
+            closestX = p2.x_;
+            closestY = p2.y_;
+        } else {
+            closestX = p1.x_ + t * dx;
+            closestY = p1.y_ + t * dy;
+        }
+
+        return calculateDistanceToCarEdge(closestX, closestY, cosTheta, sinTheta, half_length, half_width, o);
+    }
+
+    double DDP::calc_obs_cost(const std::vector<PoseState> &traj, double &t) {
+        auto obss = robot->getDataMap();
+        auto distances = robot->laserDataDistance;
+        bool flag = (distances.size() == obss.size());
+        std::vector<double> info = robot->getSize();
+
+        double radius = robot_radius_;
+        double cost = 0.0;
+        double space_cost = 0.0;
+
+        const double angle_threshold = M_PI / 4;
+
+        for (size_t i = 0; i < traj.size() - 1; ++i) {
+            double min_dist = FLT_MAX;
+            double min_front_dist = FLT_MAX;
+
+            for (size_t j = 0; j < obss.size(); ++j) {
+                double dist;
+                double dx = obss[j][STATE_X] - traj[i].x_;
+                double dy = obss[j][STATE_Y] - traj[i].y_;
+                double d = std::hypot(dx, dy);
+
+                if (flag && d >= 1)
+                    dist = d - 0.33;
+                else
+                    dist = pointToSegmentDistance(traj[i], traj[i+1], obss[j]) - radius;
+
+                if (dist < DBL_EPSILON) {
+                    return 1e6;
+                }
+
+                if (min_dist > dist) min_dist = dist;
+
+                if (use_space_cost_) {
+                    if (i > int (3 * traj.size() / 4)) {
+                        double traj_dx = traj[i + 1].x_ - traj[i].x_;
+                        double traj_dy = traj[i + 1].y_ - traj[i].y_;
+                        double traj_angle = std::atan2(traj_dy, traj_dx);
+                        double obs_angle = std::atan2(dy, dx);
+                        double angle_diff = std::fabs(traj_angle - obs_angle);
+
+                        if (angle_diff > M_PI) angle_diff = 2 * M_PI - angle_diff;
+
+                        if (angle_diff < angle_threshold) {
+                            if (dist < min_front_dist) {
+                                min_front_dist = dist;
+                            }
+                        }
+                    }else {
+                        min_front_dist = 0;
+                    }
+
+                }else {
+                    min_front_dist = 0;
+                }
+            }
+
+            if (min_dist < 0.05) {
+                cost += 500;
+            }else if (min_dist >= 0.05 && min_dist < 0.1) {
+                cost += 200;
+            }else if (min_dist >= 0.1 && min_dist < 1) {
+                cost += 10 / min_dist;
+            }else
+                cost += 0;
+
+            if (i > int (3 * traj.size() / 4)) {
+                space_cost += std::max(obs_range_ - min_front_dist, 0.0);
+            }else
+                space_cost += 0;
+
+        }
+
+        t = space_cost;
+
+        return cost;
+    }
+
     double DDP::calc_obs_cost(const std::vector<PoseState> &traj) {
         auto obss = robot->getDataMap();
         auto distances = robot->laserDataDistance;
@@ -1077,6 +1061,7 @@ namespace Antipatrea {
         double halfWidth = info[1] / 2.0;
 
         double min_dist = obs_range_;
+        double radius = robot_radius_;
 
         for (size_t i = 0; i < traj.size() - 1; ++i) {
             double cosTheta = std::cos(-traj[i].theta_);
@@ -1090,7 +1075,7 @@ namespace Antipatrea {
                 if (flag && d >= v / 2)
                     dist = d - 0.33;
                 else
-                    dist = calculateDistanceToCarEdge(traj[i].x_, traj[i].y_, cosTheta, sinTheta, halfLength, halfWidth, obss[j]) - robot_radius_;
+                    dist = calculateDistanceToCarEdge(traj[i].x_, traj[i].y_, cosTheta, sinTheta, halfLength, halfWidth, obss[j]) - radius;
 
                 if (dist < DBL_EPSILON) {
                     return 1e6;
@@ -1122,8 +1107,10 @@ namespace Antipatrea {
         double relX = obs[0] - carX;
         double relY = obs[1] - carY;
 
-        double localX = relX * cosTheta - relY * sinTheta;
-        double localY = relX * sinTheta + relY * cosTheta;
+        // double localX = relX * cosTheta - relY * sinTheta;
+        // double localY = relX * sinTheta + relY * cosTheta;
+        double localX = relX * cosTheta + relY * sinTheta;
+        double localY = -relX * sinTheta + relY * cosTheta;
 
         double dx = std::max(std::abs(localX) - halfLength, 0.0);
         double dy = std::max(std::abs(localY) - halfWidth, 0.0);
@@ -1194,9 +1181,10 @@ namespace Antipatrea {
         std::pair<std::vector<PoseState>, std::vector<PoseState> > &trajectory,
         double &dist, std::vector<double> &last_position) {
         Cost cost;
-
+        double t = 0.0;
         cost.to_goal_cost_ = calc_to_goal_cost(trajectory.first);
-        cost.obs_cost_ = calc_obs_cost(trajectory.first);
+        cost.obs_cost_ = calc_obs_cost(trajectory.first, t);
+        cost.space_cost_ = t;
         cost.speed_cost_ = calc_speed_cost(trajectory.first);
         cost.path_cost_ = calc_path_cost(trajectory.first);
         cost.ori_cost_ = calc_ori_cost(trajectory.first);
@@ -1209,8 +1197,11 @@ namespace Antipatrea {
     DDP::Cost DDP::evaluate_trajectory(std::vector<PoseState> &trajectory,
                                                              double &dist, std::vector<double> &last_position) {
         Cost cost;
+        double t = 0.0;
+
         cost.to_goal_cost_ = calc_to_goal_cost(trajectory);
-        cost.obs_cost_ = calc_obs_cost(trajectory);
+        cost.obs_cost_ = calc_obs_cost(trajectory, t);
+        cost.space_cost_ = t;
         cost.speed_cost_ = calc_speed_cost(trajectory);
         cost.path_cost_ = calc_path_cost(trajectory);
         cost.ori_cost_ = calc_ori_cost(trajectory);
@@ -1220,14 +1211,14 @@ namespace Antipatrea {
     }
 
     DDP::Cost::Cost() : obs_cost_(0.0), to_goal_cost_(0.0), speed_cost_(0.0), path_cost_(0.0),
-                                   ori_cost_(0.0), aw_cost_(0.0), total_cost_(0.0) {
+                                   ori_cost_(0.0), aw_cost_(0.0), space_cost_(0.0), total_cost_(0.0) {
     }
 
     DDP::Cost::Cost(
         const double obs_cost, const double to_goal_cost, const double speed_cost, const double path_cost,
-        const double ori_cost, const double aw_cost, const double total_cost)
+        const double ori_cost, const double aw_cost, const double space_cost, const double total_cost)
         : obs_cost_(obs_cost), to_goal_cost_(to_goal_cost), speed_cost_(speed_cost), path_cost_(path_cost),
-          ori_cost_(ori_cost), aw_cost_(aw_cost), total_cost_(total_cost) {
+          ori_cost_(ori_cost), aw_cost_(aw_cost), space_cost_(space_cost),  total_cost_(total_cost) {
     }
 
     void DDP::Cost::show() const {
@@ -1237,10 +1228,11 @@ namespace Antipatrea {
         ROS_INFO_STREAM("\tSpeed cost: " << speed_cost_);
         ROS_INFO_STREAM("\tPath cost: " << path_cost_);
         ROS_INFO_STREAM("\tOri cost: " << ori_cost_);
+        ROS_INFO_STREAM("\tSpace cost: " << space_cost_);
     }
 
     void DDP::Cost::calc_total_cost() {
-        total_cost_ = obs_cost_ + to_goal_cost_ + speed_cost_ + path_cost_ + ori_cost_;
+        total_cost_ = obs_cost_ + to_goal_cost_ + speed_cost_ + path_cost_ + ori_cost_ + space_cost_;
     }
 
     void DDP::Window::show() const {

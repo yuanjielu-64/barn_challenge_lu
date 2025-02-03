@@ -315,8 +315,8 @@ public:
     std::vector<std::vector<double>> costmapData;
     std::vector<double> laserDataDistance;
 
-    double v = 2;
-    double w = 2;
+    double v = 1;
+    double w = 1;
 
 protected:
 
@@ -362,7 +362,7 @@ protected:
 
     ros::Time stopped_time;
     ros::Time last_time;
-    const double MIN_SPEED = 0.18;
+    const double MIN_SPEED = 0.01;
     const double STOPPED_TIME_THRESHOLD = 1.0;
 
 };
