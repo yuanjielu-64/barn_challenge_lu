@@ -72,7 +72,7 @@ namespace Antipatrea {
         path_cost_gain_ = 0.1;
         ori_cost_gain_ = 0.1;
         aw_cost_gain_ = 0.2;
-        space_cost_gain_ = 0.5;
+        space_cost_gain_ = 0.2;
     }
 
     void DDP::recoverParameters(Robot_config &robot) {

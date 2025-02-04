@@ -989,7 +989,7 @@ namespace Antipatrea {
 
         for (size_t i = 0; i < traj.size() - 1; ++i) {
             double min_dist = FLT_MAX;
-            double min_front_dist = FLT_MAX;
+            double min_front_dist = 3;
 
             for (size_t j = 0; j < obss.size(); ++j) {
                 double dist;
