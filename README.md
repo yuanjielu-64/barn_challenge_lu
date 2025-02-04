@@ -37,7 +37,7 @@ git clone https://github.com/jackal/jackal_desktop.git --branch <YOUR_ROS_VERSIO
 git clone https://github.com/jackal/jackal_robot.git -- branch <YOUR_ROS_VERSION>-devel
 ```
 
-5. Please replace this to jackal/jackal_control/config/robot_localization.yaml, since these are some changes from previous version, otherwise, you will see robot is rotating 
+5. Please replace this with jackal/jackal_control/config/robot_localization.yaml, as these are some changes from the previous version. Otherwise, you will see the robot's localization deviate.
 
 Replace line 13 to line 19:
 imu0: /imu/data
