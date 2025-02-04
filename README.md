@@ -72,14 +72,14 @@ Many parts of the code are designed for future projects, meaning some files are 
 cd scripts
 python run_ddp.py --world_idx &i --out "out.txt"
 ```
-Where i is the world index you want to test.
+Where &i is the world index you want to test.
 
 2. Running All Tests
 ```
 ./test.sh
 ```
 
-### Contributing
+### Contribution
 If you would like to contribute to this project, feel free to submit a pull request or open an issue on GitHub.
 
 ### License
