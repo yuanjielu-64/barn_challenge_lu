@@ -15,7 +15,7 @@ The requirements above are just suggestions. If you run into any issue, please c
 
 Follow the instructions below to run simulations on your local machines.
 
-1. Download the requirment from jackal robot (https://www.clearpathrobotics.com/assets/guides/noetic/jackal/simulation.html), if you run successfully, then go step 2
+1. Download the requirment from jackal robot, if you run successfully, then go step 2 (https://www.clearpathrobotics.com/assets/guides/noetic/jackal/simulation.html)
 ```
 sudo apt-get install ros-noetic-jackal-simulator ros-noetic-jackal-desktop ros-noetic-jackal-navigation
 ```
@@ -40,7 +40,6 @@ git clone https://github.com/jackal/jackal_robot.git -- branch <YOUR_ROS_VERSION
 5. Clone this code from Yuanjie Lu:
 ```
 git clone git@github.com:yuanjielu-64/BARN2025.git
-
 ```
 6. Install ROS package dependencies: (replace <YOUR_ROS_VERSION> with your own, e.g. noetic)
 ```
@@ -68,14 +67,14 @@ Many parts of the code are designed for future projects, meaning some files are 
 * Core implementation: barn_challenge_lu/src/
 * Test results: barn_challenge_lu/scripts/
 
-1. : Running a Single Test
+1. Running a Single Test
 ```
 cd scripts
 python run_ddp.py --world_idx &i --out "out.txt"
 ```
-Where <i> is the world index you want to test.
+Where i is the world index you want to test.
 
-2. : Running All Tests
+2. Running All Tests
 ```
 ./test.sh
 ```
