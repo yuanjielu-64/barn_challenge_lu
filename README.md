@@ -68,6 +68,8 @@ git clone https://github.com/yuanjielu-64/BARN2025.git
 ```
 cd ..
 source /opt/ros/<YOUR_ROS_VERSION>/setup.bash
+source ~/jackal_ws/devel/setup.bash
+
 rosdep init; rosdep update
 rosdep install -y --from-paths . --ignore-src --rosdistro=<YOUR_ROS_VERSION>
 ```
