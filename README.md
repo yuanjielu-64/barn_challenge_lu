@@ -40,22 +40,23 @@ git clone https://github.com/jackal/jackal_robot.git -- branch <YOUR_ROS_VERSION
 5. Please replace this with jackal/jackal_control/config/robot_localization.yaml, as these are some changes from the previous version. Otherwise, you will see the robot's localization deviate.
 
 Replace line 13 to line 19:
+```
 imu0: /imu/data
 imu0_config: [false, false, false,
               true, true, false,
               false, false, false,
               true, true, true,
               false, false, false]
-
+```
 to 
-
+```
 imu0: /imu/data
 imu0_config: [false, false, false,
               true, true, true,
               false, false, false,
               true, true, true,
               false, false, false]
-
+```
 
 
 
