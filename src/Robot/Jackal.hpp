@@ -354,11 +354,16 @@ protected:
 
     bool is_stopped = false;
 
+    ros::Time high_speed_start_time;
+    bool high_speed_timer_active = false;
+
     ros::Time low_speed_start_time;
     bool low_speed_timer_active = false;
 
     ros::Time break_speed_start_time;
     bool break_speed_timer_active = false;
+
+
 
     ros::Time stopped_time;
     ros::Time last_time;

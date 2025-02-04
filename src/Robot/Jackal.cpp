@@ -452,19 +452,36 @@ void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
 
     double LOW_SPEED_THRESHOLD = v * 0.88;
     double LOW_SPEED_HYSTERESIS = 0.05;
+    double HIGH_SPEED_THRESHOLD = v * 0.7;
 
     if (getRobotState() == NORMAL_PLANNING) {
         low_speed_timer_active = false;
         break_speed_timer_active = false;
         is_stopped = false;
+
+        if (linear_speed < HIGH_SPEED_THRESHOLD) {
+            if (!high_speed_timer_active) {
+                high_speed_start_time = ros::Time::now();
+                high_speed_timer_active = true;
+            }else if ((ros::Time::now() - high_speed_start_time).toSec() >= 0.8) {
+                ROS_INFO("The robot is back to LOW_SPEED_PLANNING after 0.8s in high speed.");
+                setRobotState(LOW_SPEED_PLANNING);
+                high_speed_timer_active = false;
+            }
+        }else {
+            high_speed_timer_active = false;
+        }
+
+
     } else if (getRobotState() == LOW_SPEED_PLANNING) {
+        high_speed_timer_active = false;
 
         if (linear_speed >= LOW_SPEED_THRESHOLD + LOW_SPEED_HYSTERESIS) {
             if (!low_speed_timer_active) {
                 low_speed_start_time = ros::Time::now();
                 low_speed_timer_active = true;
             } else if ((ros::Time::now() - low_speed_start_time).toSec() >= 0.8) {
-                ROS_INFO("The robot is back to NORMAL_PLANNING after 0.5s in low speed.");
+                ROS_INFO("The robot is back to NORMAL_PLANNING after 0.8s in low speed.");
                 setRobotState(NORMAL_PLANNING);
                 low_speed_timer_active = false;
             }
@@ -473,7 +490,6 @@ void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
         }
 
         static constexpr double BRAKE_WAIT_TIME = 3.0; // 触发 BRAKE_PLANNING 的时间
-
         if (linear_speed < MIN_SPEED) {
             if (!break_speed_timer_active) {
                 stopped_time = ros::Time::now();

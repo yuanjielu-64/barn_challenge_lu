@@ -1041,11 +1041,14 @@ namespace Antipatrea {
             }else
                 cost += 0;
 
-            if (i > int (3 * traj.size() / 4)) {
-                space_cost += std::max(obs_range_ - min_front_dist, 0.0);
-            }else
+            if (use_space_cost_) {
+                if (i > int (3 * traj.size() / 4)) {
+                    space_cost += std::max(obs_range_ - min_front_dist, 0.0);
+                }else
+                    space_cost += 0;
+            }else {
                 space_cost += 0;
-
+            }
         }
 
         t = space_cost;

@@ -29,7 +29,7 @@ namespace Antipatrea {
         global_goal = robot.getGlobalGoalCfg();
         local_goal = robot.getLocalGoalCfg();
 
-        distance = 1.5;
+        distance = 0.3;
         robot_radius_ = 0.10;
 
         use_goal_cost_ = true;
