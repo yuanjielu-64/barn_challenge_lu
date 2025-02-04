@@ -62,7 +62,7 @@ imu0_config: [false, false, false,
 
 6. Clone this code from Yuanjie Lu:
 ```
-git clone git@github.com:yuanjielu-64/BARN2025.git
+git clone https://github.com/yuanjielu-64/BARN2025.git
 ```
 7. Install ROS package dependencies: (replace <YOUR_ROS_VERSION> with your own, e.g. noetic)
 ```
