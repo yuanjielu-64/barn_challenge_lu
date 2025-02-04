@@ -426,7 +426,6 @@ void Robot_config::update_angular_velocity() {
                 w = 1.5;
             else
                 w = 1.0;
-
         } else if (getRobotState() == LOW_SPEED_PLANNING) {
             if (abs(getPoseState().angular_velocity_) <= 1 && abs(getPoseState().velocity_) <= 1 * v / 3)
                 w = 2.5;

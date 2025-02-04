@@ -67,12 +67,12 @@ namespace Antipatrea {
         use_space_cost_ = true;
 
         to_goal_cost_gain_ = 0.8;
-        obs_cost_gain_ = 0.4;
+        obs_cost_gain_ = 0.2;
         speed_cost_gain_ = 0.2;
         path_cost_gain_ = 0.1;
         ori_cost_gain_ = 0.1;
         aw_cost_gain_ = 0.2;
-        space_cost_gain_ = 0.6;
+        space_cost_gain_ = 0.5;
     }
 
     void DDP::recoverParameters(Robot_config &robot) {

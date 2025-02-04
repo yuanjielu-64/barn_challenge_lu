@@ -323,7 +323,7 @@ namespace Antipatrea {
         double angular_velocity;
 
         if (robot->getRobotState() == Robot_config::LOW_SPEED_PLANNING) {
-            for (int i = 0; i < nr_pairs_; ++i) {
+            for (int i = 0; i < nr_pairs_ - 180; ++i) {
                 if (RandomUniformReal(0, 1) < 0.05 && delta_v_sum != FLT_MIN && delta_w_sum != FLT_MAX) {
                     linear_velocity = delta_v_sum;
                     angular_velocity = delta_w_sum;
@@ -334,11 +334,11 @@ namespace Antipatrea {
                 pairs.emplace_back(linear_velocity, angular_velocity);
             }
 
-            // for (int i = 0; i < 10; ++i) {
-            //     angular_velocity = RandomUniformReal(dw.min_angular_velocity_, dw.max_angular_velocity_);
-            //
-            //     pairs.emplace_back(0.0, angular_velocity);
-            // }
+            for (int i = 0; i < 180; ++i) {
+                angular_velocity = RandomUniformReal(dw.min_angular_velocity_, dw.max_angular_velocity_);
+
+                pairs.emplace_back(0.0, angular_velocity);
+            }
 
         }else {
             for (int i = 0; i < nr_pairs_; ++i) {
@@ -680,6 +680,7 @@ namespace Antipatrea {
     std::vector<double> DDP::savitzkyGolayFilter(const std::vector<double> &data, int window_size,
                                                             int poly_order) {
         std::vector<double> coefficients = {-0.0952, 0.1429, 0.2857, 0.3333, 0.2857, 0.1429, -0.0952};
+        //std::vector<double> coefficients = calculateSGCoefficients(window_size, poly_order);
         int half_window = window_size / 2;
 
         std::vector<double> smoothed_data(data.size(), 0.0);
@@ -876,10 +877,12 @@ namespace Antipatrea {
 
         double theta = 0;
 
-        for (int i = int (2 * traj.size() / 4); i < traj.size() - 1; i++)
+        for (int i = int (3 * traj.size() / 4); i < traj.size() - 1; i++) {
             theta += fabs(calculateTheta(traj[i], &local_goal[0]));
+        }
 
-        return theta / int (2 * traj.size() / 4);;
+        return theta / int (1 * traj.size() / 4);;
+
     }
 
     double DDP::calc_angular_velocity(const std::vector<PoseState> &traj) {
@@ -1030,11 +1033,11 @@ namespace Antipatrea {
             }
 
             if (min_dist < 0.05) {
-                cost += 500;
+                cost += 300;
             }else if (min_dist >= 0.05 && min_dist < 0.1) {
-                cost += 200;
+                cost += 150;
             }else if (min_dist >= 0.1 && min_dist < 1) {
-                cost += 10 / min_dist;
+                cost += obs_range_ - min_dist + 1 / min_dist;
             }else
                 cost += 0;
 
