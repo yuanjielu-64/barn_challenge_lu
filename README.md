@@ -37,11 +37,33 @@ git clone https://github.com/jackal/jackal_desktop.git --branch <YOUR_ROS_VERSIO
 git clone https://github.com/jackal/jackal_robot.git -- branch <YOUR_ROS_VERSION>-devel
 ```
 
-5. Clone this code from Yuanjie Lu:
+5. Please replace this to jackal/jackal_control/config/robot_localization.yaml, since these are some changes from previous version, otherwise, you will see robot is rotating 
+
+Replace line 13 to line 19:
+imu0: /imu/data
+imu0_config: [false, false, false,
+              true, true, false,
+              false, false, false,
+              true, true, true,
+              false, false, false]
+
+to 
+
+imu0: /imu/data
+imu0_config: [false, false, false,
+              true, true, true,
+              false, false, false,
+              true, true, true,
+              false, false, false]
+
+
+
+
+6. Clone this code from Yuanjie Lu:
 ```
 git clone git@github.com:yuanjielu-64/BARN2025.git
 ```
-6. Install ROS package dependencies: (replace <YOUR_ROS_VERSION> with your own, e.g. noetic)
+7. Install ROS package dependencies: (replace <YOUR_ROS_VERSION> with your own, e.g. noetic)
 ```
 cd ..
 source /opt/ros/<YOUR_ROS_VERSION>/setup.bash
@@ -49,7 +71,7 @@ rosdep init; rosdep update
 rosdep install -y --from-paths . --ignore-src --rosdistro=<YOUR_ROS_VERSION>
 ```
 
-7. Cd the jackal_ws/ and build the workspace
+8. Cd the jackal_ws/ and build the workspace
 ```
 catkin_make
 source devel/setup.bash
