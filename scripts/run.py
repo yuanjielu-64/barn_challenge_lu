@@ -159,7 +159,7 @@ if __name__ == "__main__":
     success = False
     if collided:
         status = "collided"
-    elif curr_time - start_time >= 20:
+    elif curr_time - start_time >= 40:
         status = "timeout"
     else:
         status = "succeeded"
