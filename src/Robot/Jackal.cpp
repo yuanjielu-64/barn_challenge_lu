@@ -207,9 +207,9 @@ void Robot_config::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &msg
 void Robot_config::costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg) {
     costmapData.clear();
 
-    if (getRobotState() == LOW_SPEED_PLANNING || getRobotState() == NORMAL_PLANNING) {
-        return;
-    }
+    // if (getRobotState() == LOW_SPEED_PLANNING || getRobotState() == NORMAL_PLANNING) {
+    //     return;
+    // }
 
     const int width = msg->info.width;
     const int height = msg->info.height;
@@ -250,7 +250,9 @@ void Robot_config::costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
                 }
             }
         }
+        auto a = 10;
     }
+
 
 }
 
@@ -317,7 +319,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
         double distance = l2_distance(robot_state.x_, robot_state.y_, xhat[i], yhat[i]);
 
         if (getAlgorithm() == DWA || getAlgorithm() == DDPDWA) {
-            v = 2;
+            v = 1.5;
             thresholdSq = 2 * v + 1;
 
             if (distance >= thresholdSq * thresholdSq && flag == false) {
@@ -394,7 +396,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
                 // }
             } else if (getRobotState() == NO_MAP_PLANNING){
                 v = 1;
-                thresholdSq = 2 * v + 1;
+                thresholdSq = v;
                 if (distance >= thresholdSq * thresholdSq && flag == false) {
                     lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                     setLocalGoal(lg, xhat[i], yhat[i]);
@@ -402,7 +404,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
                     break;
                 }
             }else {
-                v = 0.5;
+                v = 1;
                 thresholdSq = v;
                 if (distance >= thresholdSq * thresholdSq && flag == false) {
                     lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
@@ -599,7 +601,7 @@ bool Robot_config::setup() {
     data_ready = false;
 
     if (global_goal_odom.empty()) {
-        global_goal_odom = {0, 15};
+        global_goal_odom = {0, 10};
         setRobotState(NORMAL_PLANNING);
     }
 
@@ -615,7 +617,7 @@ std::vector<double> Robot_config::getSize() const {
     std::vector<double> info;
     //size, velocity, angular velocity
     if (currentMap == ONLY_COSTMAP_RECEIVED && getRobotState() == RECOVERY)
-        info = {0.02, 0.02, 0.0, 2, -2, 2};
+        info = {0.02, 0.02, 0, v, -w, w};
     else if (currentMap == ONLY_COSTMAP_RECEIVED && getRobotState() == BACKWARD)
         info = {0.02, 0.02, -2.0, 0.0, -2, 2};
     else if (currentMap == ONLY_COSTMAP_RECEIVED && getRobotState() == FORWARD)

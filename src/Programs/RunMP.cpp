@@ -61,7 +61,7 @@ extern "C" int RunMP(int argc, char **argv) {
         ros::spinOnce();
 
         if (!robot.setup()) {
-            rate.sleep();
+            // rate.sleep();
             continue;
         }
 

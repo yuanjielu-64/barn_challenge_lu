@@ -77,29 +77,30 @@ namespace Antipatrea {
 
     void DDP::recoverParameters(Robot_config &robot) {
         v_steps_ = 20;
-        w_steps_ = 10;
+        w_steps_ = 20;
         nr_steps_ = 20;
-        nr_pairs_ = 200;
+        nr_pairs_ = 600;
 
         global_goal = robot.getGlobalGoalCfg();
         local_goal = robot.getLocalGoalCfg();
 
-        distance = 1.0;
-        robot_radius_ = 0.04;
+        distance = 0.6;
+        robot_radius_ = 0.1;
 
         use_goal_cost_ = true;
-        use_angular_cost_ = true;
+        use_angular_cost_ = false;
         use_path_cost_ = false;
         use_speed_cost_ = false;
         use_ori_cost_ = true;
-        use_space_cost_ = false;
+        use_space_cost_ = true;
 
-        to_goal_cost_gain_ = 0.9;
-        obs_cost_gain_ = 0.3;
-        speed_cost_gain_ = 0.1;
-        path_cost_gain_ = 0.6;
-        ori_cost_gain_ = 0.2;
-        aw_cost_gain_ = 0.8;
+        to_goal_cost_gain_ = 0.8;
+        obs_cost_gain_ = 0.2;
+        speed_cost_gain_ = 0.2;
+        path_cost_gain_ = 0.1;
+        ori_cost_gain_ = 0.1;
+        aw_cost_gain_ = 0.2;
+        space_cost_gain_ = 0.2;
     }
 
     void DDP::frontBackParameters(Robot_config &robot) {
