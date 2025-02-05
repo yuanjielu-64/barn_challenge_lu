@@ -104,7 +104,7 @@ namespace Antipatrea {
         }
 
         if (robot->getRobotState() == Robot_config::RECOVERY) {
-            if (robot->front_obs <= 0.05) {
+            if (robot->front_obs <= 0.1) {
                 robot->setRobotState(Robot_config::BACKWARD);
                 return true;
             }
@@ -164,7 +164,7 @@ namespace Antipatrea {
 
             frontBackParameters(*robot);
 
-            if (robot->front_obs >= 0.05) {
+            if (robot->front_obs >= 0.1) {
                 robot->setRobotState(Robot_config::RECOVERY);
                 return true;
             }

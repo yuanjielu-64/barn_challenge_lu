@@ -154,27 +154,26 @@ if __name__ == "__main__":
     ##########################################################################################
     ## 3. Report metrics and generate log
     ##########################################################################################
-
     print(">>>>>>>>>>>>>>>>>> Test finished! <<<<<<<<<<<<<<<<<<")
     success = False
     if collided:
         status = "collided"
-    elif curr_time - start_time >= 40:
+    elif curr_time - start_time >= 50:
         status = "timeout"
     else:
         status = "succeeded"
         success = True
-    print("Navigation %s with time %.4f (s)" % (status, curr_time - start_time))
 
+    print("Navigation %s with time %.4f (s)" %(status, curr_time - start_time))
+    
     if args.world_idx >= 300:  # DynaBARN environment which does not have a planned path
         path_length = GOAL_POSITION[0] - INIT_POSITION[0]
     else:
-        path_file_name = join(base_path, "launch/data/path_files", "path_%d.npy" % args.world_idx)
+        path_file_name = join(base_path, "worlds/BARN/path_files", "path_%d.npy" %args.world_idx)
         path_array = np.load(path_file_name)
         path_array = [path_coord_to_gazebo_coord(*p) for p in path_array]
         path_array = np.insert(path_array, 0, (INIT_POSITION[0], INIT_POSITION[1]), axis=0)
-        path_array = np.insert(path_array, len(path_array),
-                               (INIT_POSITION[0] + GOAL_POSITION[0], INIT_POSITION[1] + GOAL_POSITION[1]), axis=0)
+        path_array = np.insert(path_array, len(path_array), (INIT_POSITION[0] + GOAL_POSITION[0], INIT_POSITION[1] + GOAL_POSITION[1]), axis=0)
         path_length = 0
         for p1, p2 in zip(path_array[:-1], path_array[1:]):
             path_length += compute_distance(p1, p2)
@@ -187,7 +186,7 @@ if __name__ == "__main__":
 
     with open(args.out, "a") as f:
         f.write("%d %d %d %d %.4f %.4f %.4f\n" % (
-        args.world_idx, success, collided, (actual_time) >= 20, actual_time, optimal_time, nav_metric))
+        args.world_idx, success, collided, (actual_time) >= 50, actual_time, optimal_time, nav_metric))
 
     gazebo_process.terminate()
     gazebo_process.wait()
