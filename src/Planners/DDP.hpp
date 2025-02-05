@@ -276,8 +276,6 @@ namespace Antipatrea {
         double n;
 
         std::mutex mtx;
-
-        std::vector<std::vector<double> > local_paths;
     };
 
     ClassContainer(DDP, m_Milan);

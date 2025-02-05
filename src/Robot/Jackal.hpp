@@ -294,6 +294,7 @@ public:
     bool getGoal{};
 
     std::vector<std::vector<double>> local_paths;
+    std::vector<std::vector<double>> local_paths_odom;
 
     std::vector<std::vector<double>> actions;
     std::vector<double> grid_min;
@@ -367,7 +368,7 @@ protected:
 
     ros::Time stopped_time;
     ros::Time last_time;
-    const double MIN_SPEED = 0.01;
+    const double MIN_SPEED = 0.1;
     const double STOPPED_TIME_THRESHOLD = 1.0;
 
 };

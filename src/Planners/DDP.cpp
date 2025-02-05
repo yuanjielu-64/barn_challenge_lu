@@ -52,20 +52,20 @@ namespace Antipatrea {
         if (robot->setting(Robot_config::ONLY_LASER_RECEIVED, 2) == false)
             return false;
 
-        normalParameters(*robot);
+//        robot->setRobotState(Robot_config::BRAKE_PLANNING);
 
-        auto result = mppi_planning(parent, parent_odom, best_traj, dt);
+         normalParameters(*robot);
 
-        robot->viewTrajectories(best_traj.first, nr_steps_, 0.0, timeInterval);
-//        ROS_INFO("best_traj.first.front().angular_velocity_: %f", best_traj.first[5].angular_velocity_);
-        if (result == false) {
-            robot->setRobotState(Robot_config::LOW_SPEED_PLANNING);
-            // publishCommand(cmd_vel, 0.5, 0);
-            // publishCommand(cmd_vel, 0, 0);
-            publishCommand(cmd_vel, best_traj.first[3].velocity_ / 2 , best_traj.first[3].angular_velocity_ / 2);
-        } else {
-            publishCommand(cmd_vel, best_traj.first[3].velocity_ , best_traj.first[3].angular_velocity_);
-        }
+         auto result = mppi_planning(parent, parent_odom, best_traj, dt);
+
+         robot->viewTrajectories(best_traj.first, nr_steps_, 0.0, timeInterval);
+ //        ROS_INFO("best_traj.first.front().angular_velocity_: %f", best_traj.first[5].angular_velocity_);
+         if (result == false) {
+             robot->setRobotState(Robot_config::LOW_SPEED_PLANNING);
+             publishCommand(cmd_vel, best_traj.first[3].velocity_ / 2 , best_traj.first[3].angular_velocity_ / 2);
+         } else {
+             publishCommand(cmd_vel, best_traj.first[3].velocity_ , best_traj.first[3].angular_velocity_);
+         }
 
         return true;
     }
@@ -105,6 +105,43 @@ namespace Antipatrea {
             return true;
         }
 
+        if (robot->getRobotState() == Robot_config::RECOVERY) {
+            std::vector<std::vector<double>> local_paths = robot->local_paths_odom;
+
+            if (!parent_odom.valid_ || local_paths.empty())
+                return false;
+
+            if (robot->front_obs <= 0.05) {
+                robot->setRobotState(Robot_config::BACKWARD);
+                return true;
+            }
+
+            double sum_angle = 0.0;
+            int count = 0;
+
+            for (const auto& point : local_paths) {
+                double dx = point[0] - parent_odom.x_;
+                double dy = point[1] - parent_odom.y_;
+
+                double angle = atan2(dy, dx);
+                sum_angle += angle;
+                count++;
+            }
+
+            double rotate_angle = sum_angle / count - parent_odom.theta_;
+            rotate_angle = normalizeAngle(rotate_angle);
+
+            if (fabs(rotate_angle) <= 0.2) {
+                robot->setRobotState(Robot_config::LOW_SPEED_PLANNING);
+                return true;
+            }
+
+            double z = rotate_angle  > 0 ? std::min(rotate_angle , 1.0) : std::max(rotate_angle , -1.0);
+            z = z > 0 ? std::max(z, 0.5) : std::min(z, -0.5);
+            publishCommand(cmd_vel, 0.0, z);
+            return true;
+        }
+
         if (robot->getRobotState() == Robot_config::ROTATE_PLANNING) {
             if (robot->setting(Robot_config::ONLY_LASER_RECEIVED, 2) == false)
                 return false;
@@ -122,42 +159,18 @@ namespace Antipatrea {
             return true;
         }
 
-        if (robot->getRobotState() == Robot_config::RECOVERY) {
-            bool results;
-
-            if (robot->front_obs <= 0.10) {
-                robot->setRobotState(Robot_config::BACKWARD);
-                return true;
-            }
-
-            if (robot->setting(Robot_config::ONLY_COSTMAP_RECEIVED, 2) == false)
-                return false;
-
-            recoverParameters(*robot);
-
-            auto best_theta = recover(parent, parent_odom, best_traj, results);
-
-            if (results == false)
-                return false;
-
-            robot->rotating_angle = normalizeAngle(robot->getPoseState().theta_ + best_theta);
-
-            robot->viewTrajectories(best_traj.first, nr_steps_, best_theta, timeInterval);
-            robot->setRobotState(Robot_config::ROTATE_PLANNING);
-        }
-
         if (robot->getRobotState() == Robot_config::BACKWARD) {
             if (robot->setting(Robot_config::ONLY_LASER_RECEIVED, 2) == false)
                 return false;
 
             frontBackParameters(*robot);
 
-            if (robot->front_obs >= 0.10) {
+            if (robot->front_obs >= 0.05) {
                 robot->setRobotState(Robot_config::RECOVERY);
                 return true;
             }
 
-            publishCommand(cmd_vel, -0.2, 0);
+            publishCommand(cmd_vel, -0.1, 0);
         }
 
         return true;
@@ -323,7 +336,7 @@ namespace Antipatrea {
         double angular_velocity;
 
         if (robot->getRobotState() == Robot_config::LOW_SPEED_PLANNING) {
-            for (int i = 0; i < nr_pairs_ - 180; ++i) {
+            for (int i = 0; i < nr_pairs_ - 100; ++i) {
                 if (RandomUniformReal(0, 1) < 0.05 && delta_v_sum != FLT_MIN && delta_w_sum != FLT_MAX) {
                     linear_velocity = delta_v_sum;
                     angular_velocity = delta_w_sum;
@@ -334,10 +347,8 @@ namespace Antipatrea {
                 pairs.emplace_back(linear_velocity, angular_velocity);
             }
 
-            for (int i = 0; i < 180; ++i) {
-                angular_velocity = RandomUniformReal(dw.min_angular_velocity_, dw.max_angular_velocity_);
-
-                pairs.emplace_back(0.0, angular_velocity);
+            for (int i = 0; i < 100; ++i) {
+                pairs.emplace_back(0.01, 0.0);
             }
 
         }else {
@@ -935,15 +946,17 @@ namespace Antipatrea {
     }
 
     double DDP::calc_dist_to_path(const std::vector<double> &state) {
-        auto edge_point1 = local_paths.front();
-        auto edge_point2 = local_paths.back();
+        // auto edge_point1 = local_paths.front();
+        // auto edge_point2 = local_paths.back();
+        //
+        // const double a = edge_point2[STATE_Y] - edge_point1[STATE_Y];
+        // const double b = -(edge_point2[STATE_X] - edge_point1[STATE_X]);
+        // const double c = -a * edge_point1[STATE_Y] - b * edge_point1[STATE_Y];
+        //
+        // return std::round(fabs(a * state[STATE_X] + b * state[STATE_Y] + c) / (hypot(a, b) + DBL_EPSILON) * 1000) /
+        //        1000;
 
-        const double a = edge_point2[STATE_Y] - edge_point1[STATE_Y];
-        const double b = -(edge_point2[STATE_X] - edge_point1[STATE_X]);
-        const double c = -a * edge_point1[STATE_Y] - b * edge_point1[STATE_Y];
-
-        return std::round(fabs(a * state[STATE_X] + b * state[STATE_Y] + c) / (hypot(a, b) + DBL_EPSILON) * 1000) /
-               1000;
+        return 0.0;
     }
 
     double DDP::pointToSegmentDistance(const PoseState& p1, const PoseState& p2, const std::vector<double>& o) {

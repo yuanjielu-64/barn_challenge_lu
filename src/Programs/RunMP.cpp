@@ -74,7 +74,7 @@ extern "C" int RunMP(int argc, char **argv) {
                       << "  v " << pose.velocity_
                       << "  w " << pose.angular_velocity_ << std::endl;
 
-        // Logger::m_out << "Loading nodes took: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
+        Logger::m_out << "Loading nodes took: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
 
         static const std::unordered_map<int, std::string> state_descriptions = {
             {Robot_config::INITIALIZING, "initializing"},
@@ -106,7 +106,7 @@ extern "C" int RunMP(int argc, char **argv) {
 
         // Logger::m_out << std::endl;
 
-        rate.sleep();
+        // rate.sleep();
     }
 
     return 0;

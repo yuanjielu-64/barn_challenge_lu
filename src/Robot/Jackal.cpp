@@ -207,6 +207,10 @@ void Robot_config::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &msg
 void Robot_config::costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg) {
     costmapData.clear();
 
+    if (getRobotState() == LOW_SPEED_PLANNING || getRobotState() == NORMAL_PLANNING) {
+        return;
+    }
+
     const int width = msg->info.width;
     const int height = msg->info.height;
     const double resolution = msg->info.resolution;
@@ -247,12 +251,14 @@ void Robot_config::costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
             }
         }
     }
+
 }
 
 void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
     getGoal = false;
     local_goal.clear();
     local_paths.clear();
+    local_paths_odom.clear();
     std::vector<double> goals;
     goals.reserve(2);
 
@@ -288,7 +294,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
     goals = {global_goal_odom[0], global_goal_odom[1]};
 
     std::vector<double> last_point = {INFINITY, INFINITY};
-    int n = 0;
+
     bool flag = false;
     double thresholdSq = 0;
 
@@ -301,6 +307,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
             if (distance >= 0.1) {
                 lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                 local_paths.emplace_back(std::vector<double> {lg[0], lg[1]});
+                local_paths_odom.emplace_back(std::vector<double> {xhat[i], yhat[i]});
                 last_point = {xhat[i], yhat[i]};
             }
         }else {
@@ -385,10 +392,18 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
                 //
                 //     ++n;
                 // }
-            } else {
-                v = 1.0;
+            } else if (getRobotState() == NO_MAP_PLANNING){
+                v = 1;
+                thresholdSq = 2 * v + 1;
+                if (distance >= thresholdSq * thresholdSq && flag == false) {
+                    lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
+                    setLocalGoal(lg, xhat[i], yhat[i]);
+                    flag = true;
+                    break;
+                }
+            }else {
+                v = 0.5;
                 thresholdSq = v;
-                // thresholdSq = 1;
                 if (distance >= thresholdSq * thresholdSq && flag == false) {
                     lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                     setLocalGoal(lg, xhat[i], yhat[i]);
@@ -450,9 +465,9 @@ void Robot_config::goalCallback(const move_base_msgs::MoveBaseActionGoal::ConstP
 void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
     double linear_speed = fabs(getPoseState().velocity_);
 
-    double LOW_SPEED_THRESHOLD = v * 0.88;
+    double LOW_SPEED_THRESHOLD = v * 0.8 + 0.05;
     double LOW_SPEED_HYSTERESIS = 0.05;
-    double HIGH_SPEED_THRESHOLD = v * 0.7;
+    double HIGH_SPEED_THRESHOLD = v * 0.5 + 0.1;
 
     if (getRobotState() == NORMAL_PLANNING) {
         low_speed_timer_active = false;
@@ -463,7 +478,7 @@ void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
             if (!high_speed_timer_active) {
                 high_speed_start_time = ros::Time::now();
                 high_speed_timer_active = true;
-            }else if ((ros::Time::now() - high_speed_start_time).toSec() >= 0.8) {
+            }else if ((ros::Time::now() - high_speed_start_time).toSec() >= 0.5) {
                 ROS_INFO("The robot is back to LOW_SPEED_PLANNING after 0.8s in high speed.");
                 setRobotState(LOW_SPEED_PLANNING);
                 high_speed_timer_active = false;
@@ -471,8 +486,6 @@ void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
         }else {
             high_speed_timer_active = false;
         }
-
-
     } else if (getRobotState() == LOW_SPEED_PLANNING) {
         high_speed_timer_active = false;
 
@@ -480,7 +493,7 @@ void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
             if (!low_speed_timer_active) {
                 low_speed_start_time = ros::Time::now();
                 low_speed_timer_active = true;
-            } else if ((ros::Time::now() - low_speed_start_time).toSec() >= 0.8) {
+            } else if ((ros::Time::now() - low_speed_start_time).toSec() >= 0.5) {
                 ROS_INFO("The robot is back to NORMAL_PLANNING after 0.8s in low speed.");
                 setRobotState(NORMAL_PLANNING);
                 low_speed_timer_active = false;
