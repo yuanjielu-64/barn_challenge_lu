@@ -504,7 +504,7 @@ void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
             low_speed_timer_active = false;
         }
 
-        static constexpr double BRAKE_WAIT_TIME = 3.0; // 触发 BRAKE_PLANNING 的时间
+        static constexpr double BRAKE_WAIT_TIME = 0.6; // 触发 BRAKE_PLANNING 的时间
         if (linear_speed < MIN_SPEED) {
             if (!break_speed_timer_active) {
                 stopped_time = ros::Time::now();

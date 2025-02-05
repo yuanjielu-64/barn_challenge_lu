@@ -364,11 +364,9 @@ protected:
     ros::Time break_speed_start_time;
     bool break_speed_timer_active = false;
 
-
-
     ros::Time stopped_time;
     ros::Time last_time;
-    const double MIN_SPEED = 0.1;
+    const double MIN_SPEED = 0.05;
     const double STOPPED_TIME_THRESHOLD = 1.0;
 
 };

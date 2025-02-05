@@ -63,7 +63,7 @@ namespace Antipatrea {
         use_angular_cost_ = false;
         use_path_cost_ = false;
         use_speed_cost_ = false;
-        use_ori_cost_ = true;
+        use_ori_cost_ = false;
         use_space_cost_ = true;
 
         to_goal_cost_gain_ = 0.8;
@@ -84,7 +84,7 @@ namespace Antipatrea {
         global_goal = robot.getGlobalGoalCfg();
         local_goal = robot.getLocalGoalCfg();
 
-        distance = 0.6;
+        distance = 0.4;
         robot_radius_ = 0.1;
 
         use_goal_cost_ = true;
