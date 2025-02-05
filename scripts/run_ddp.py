@@ -154,6 +154,7 @@ if __name__ == "__main__":
     ##########################################################################################
     ## 3. Report metrics and generate log
     ##########################################################################################
+
     print(">>>>>>>>>>>>>>>>>> Test finished! <<<<<<<<<<<<<<<<<<")
     success = False
     if collided:
@@ -163,17 +164,17 @@ if __name__ == "__main__":
     else:
         status = "succeeded"
         success = True
+    print("Navigation %s with time %.4f (s)" % (status, curr_time - start_time))
 
-    print("Navigation %s with time %.4f (s)" %(status, curr_time - start_time))
-    
     if args.world_idx >= 300:  # DynaBARN environment which does not have a planned path
         path_length = GOAL_POSITION[0] - INIT_POSITION[0]
     else:
-        path_file_name = join(base_path, "worlds/BARN/path_files", "path_%d.npy" %args.world_idx)
+        path_file_name = join(base_path, "launch/data/path_files", "path_%d.npy" % args.world_idx)
         path_array = np.load(path_file_name)
         path_array = [path_coord_to_gazebo_coord(*p) for p in path_array]
         path_array = np.insert(path_array, 0, (INIT_POSITION[0], INIT_POSITION[1]), axis=0)
-        path_array = np.insert(path_array, len(path_array), (INIT_POSITION[0] + GOAL_POSITION[0], INIT_POSITION[1] + GOAL_POSITION[1]), axis=0)
+        path_array = np.insert(path_array, len(path_array),
+                               (INIT_POSITION[0] + GOAL_POSITION[0], INIT_POSITION[1] + GOAL_POSITION[1]), axis=0)
         path_length = 0
         for p1, p2 in zip(path_array[:-1], path_array[1:]):
             path_length += compute_distance(p1, p2)
