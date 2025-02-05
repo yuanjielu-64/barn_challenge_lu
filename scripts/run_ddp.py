@@ -142,7 +142,7 @@ if __name__ == "__main__":
     start_time_cpu = time.time()
     collided = False
 
-    while compute_distance(goal_coor, curr_coor) > 4 and not collided and curr_time - start_time < 20:
+    while compute_distance(goal_coor, curr_coor) > 4 and not collided and curr_time - start_time < 50:
         curr_time = rospy.get_time()
         pos = gazebo_sim.get_model_state().pose.position
         curr_coor = (pos.x, pos.y)
