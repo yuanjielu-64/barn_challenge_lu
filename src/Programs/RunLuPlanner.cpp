@@ -62,7 +62,8 @@ extern "C" int RunDDP(int argc, char **argv) {
         ros::spinOnce();
 
         if (!robot.setup()) {
-            rate.sleep();
+            if (robot.getRobotState() == Robot_config::BRAKE_PLANNING)
+                rate.sleep();
             continue;
         }
 
@@ -75,7 +76,7 @@ extern "C" int RunDDP(int argc, char **argv) {
                       << "  v " << pose.velocity_
                       << "  w " << pose.angular_velocity_ << std::endl;
 
-        Logger::m_out << "Loading nodes took: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
+        // Logger::m_out << "Loading nodes took: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
 
         static const std::unordered_map<int, std::string> state_descriptions = {
             {Robot_config::INITIALIZING, "initializing"},
@@ -93,15 +94,15 @@ extern "C" int RunDDP(int argc, char **argv) {
 
         auto state_it = state_descriptions.find(robot.getRobotState());
         if (state_it != state_descriptions.end()) {
-//            Logger::m_out << "Robot STATE: " << state_it->second << std::endl;
+            Logger::m_out << "Robot STATE: " << state_it->second << std::endl;
         } else {
-//            Logger::m_out << "Robot STATE: unknown" << std::endl;
+            Logger::m_out << "Robot STATE: unknown" << std::endl;
         }
 
-        Logger::m_out << "Task execution cost: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
+        // Logger::m_out << "Task execution cost: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
         // Logger::m_out << std::endl;
 
-        rate.sleep();
+        // rate.sleep();
     }
 
     return 0;

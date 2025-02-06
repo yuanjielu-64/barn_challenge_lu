@@ -61,7 +61,8 @@ extern "C" int RunMP(int argc, char **argv) {
         ros::spinOnce();
 
         if (!robot.setup()) {
-            // rate.sleep();
+            if (robot.getRobotState() == Robot_config::BRAKE_PLANNING)
+                rate.sleep();
             continue;
         }
 
@@ -74,7 +75,7 @@ extern "C" int RunMP(int argc, char **argv) {
                       << "  v " << pose.velocity_
                       << "  w " << pose.angular_velocity_ << std::endl;
 
-        Logger::m_out << "Loading nodes took: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
+        // Logger::m_out << "Loading nodes took: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
 
         static const std::unordered_map<int, std::string> state_descriptions = {
             {Robot_config::INITIALIZING, "initializing"},
@@ -94,15 +95,15 @@ extern "C" int RunMP(int argc, char **argv) {
         if (state_it != state_descriptions.end()) {
             Logger::m_out << "Robot STATE: " << state_it->second << std::endl;
         } else {
-//            Logger::m_out << "Robot STATE: unknown" << std::endl;
+            Logger::m_out << "Robot STATE: unknown" << std::endl;
         }
 
-        if (Timer::Elapsed(start_time) >= 0.05) {
-            ROS_ERROR_THROTTLE(0.5, "task execution > 0.5!!!");
+        //if (Timer::Elapsed(start_time) >= 0.05) {
+             // ROS_ERROR_THROTTLE(0.5, "task execution > 0.5!!!");
             // Logger::m_out << "Task execution cost: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
-        }
+        //}
 
-        Logger::m_out << "Task execution cost: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
+        //Logger::m_out << "Task execution cost: " << Timer::Elapsed(start_time) << " seconds" << std::endl;
 
         // Logger::m_out << std::endl;
 
@@ -112,38 +113,3 @@ extern "C" int RunMP(int argc, char **argv) {
     return 0;
 }
 
-//if (i < 0) {
-//GManager gManager;
-//GManagerMP gMP;
-//GManagerDecomposition gDecomposition;
-//GManagerGoals gGoals;
-//GManagerSimulator gSimulator;
-//
-//gDecomposition.SetSetup(&setup);
-//gDecomposition.SetManager(&gManager);
-//gManager.GetComponents()->push_back(&gDecomposition);
-//
-//gGoals.SetSetup(&setup);
-//gGoals.SetManager(&gManager);
-//gManager.GetComponents()->push_back(&gGoals);
-//
-//gSimulator.SetSetup(&setup);
-//gSimulator.SetManager(&gManager);
-//gManager.GetComponents()->push_back(&gSimulator);
-//
-//gMP.SetSetup(&setup);
-//gMP.SetManager(&gManager);
-//gManager.GetComponents()->push_back(&gMP);
-//
-//auto data = params.GetData(Antipatrea::Constants::KW_Graphics);
-//if (data && data->m_params) {
-//GDrawSetupFromParams(*(data->m_params));
-//gManager.SetupFromParams(*(data->m_params));
-//gMP.SetupFromParams(*(data->m_params));
-//gDecomposition.SetupFromParams(*(data->m_params));
-//gGoals.SetupFromParams(*(data->m_params));
-//gSimulator.SetupFromParams(*(data->m_params));
-//}
-//
-//gManager.MainLoop("GRunMP");
-//}

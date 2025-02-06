@@ -2,148 +2,24 @@
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Path.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <vector>
-
 #include <utility>
-#include <iostream>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2/LinearMath/Matrix3x3.h>
 #include <opencv2/opencv.hpp>
 #include <ctime>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <filesystem>
-#include "Components/GroupKeyTour.hpp"
 #include "Programs/Setup.hpp"
 #include <cmath>
 #include <nav_msgs/GetPlan.h>
-#include <geometry_msgs/PoseStamped.h>
 
 #include "std_srvs/Empty.h"
 #include <algorithm>
 #include "utility.hpp"
-
-double Robot_config::getPathFromGlobalPlanner(PoseState &state) {
-    geometry_msgs::PoseStamped start_ = makePose(state.x_, state.y_, state.theta_);
-
-    geometry_msgs::PoseStamped goal_ = makePose(robot_state.x_, global_goal_odom[1], 1.0);
-
-    nav_msgs::GetPlan srv;
-    srv.request.start = start_;
-    srv.request.goal = goal_;
-    srv.request.tolerance = 0.0;
-
-    double path_length = 0.0;
-    if (global_path_clt.call(srv)) {
-        const std::vector<geometry_msgs::PoseStamped> &poses = srv.response.plan.poses;
-        nav_msgs::Path path;
-        path.header.stamp = ros::Time::now();
-        path.header.frame_id = "odom";
-
-        for (size_t i = 1; i < poses.size(); ++i) {
-            double dx = poses[i].pose.position.x - poses[i - 1].pose.position.x;
-            double dy = poses[i].pose.position.y - poses[i - 1].pose.position.y;
-            path_length += std::sqrt(dx * dx + dy * dy);
-
-            geometry_msgs::PoseStamped pose;
-
-            pose.header.stamp = ros::Time::now();
-            pose.header.frame_id = "odom";
-            pose.pose.position.x = poses[i].pose.position.x;
-            pose.pose.position.y = poses[i].pose.position.y;
-            pose.pose.position.z = 0;
-
-            path.poses.push_back(pose);
-        }
-
-        global_path_pub.publish(path);
-    }
-
-    return path_length;
-}
-
-void Robot_config::setLocalGoal() {
-    local_goal.clear();
-    global_goal.clear();
-    std::vector<double> goals;
-    goals.reserve(2);
-
-    // global goal -> local goal
-    std::vector<double> lg = transform_lg(global_goal_odom[0],
-                                          global_goal_odom[1],
-                                          robot_state.x_,
-                                          robot_state.y_,
-                                          robot_state.theta_);
-
-    global_goal = lg;
-
-    goals = {robot_state.x_, global_goal_odom[1]};
-
-    if (!getDataMap().empty()) {
-        //if ((local_goal_odom.empty() && !getDataMap().empty()) || isStatusChanged) {
-        geometry_msgs::PoseStamped start_ = makePose(robot_state.x_, robot_state.y_, robot_state.theta_);
-        geometry_msgs::PoseStamped goal_ = makePose(robot_state.x_, global_goal_odom[1], 1.0);
-
-        nav_msgs::GetPlan srv;
-        srv.request.start = start_;
-        srv.request.goal = goal_;
-        srv.request.tolerance = 0.0;
-
-        if (global_path_clt.call(srv)) {
-            std::vector<double> X, Y;
-            for (const auto &pose: srv.response.plan.poses) {
-                X.push_back(pose.pose.position.x);
-                Y.push_back(pose.pose.position.y);
-            }
-
-            std::vector<double> xhat = savgolFilter(X, 9, 2);
-            std::vector<double> yhat = savgolFilter(Y, 9, 2);
-            local_goal_point.clear();
-
-            int n = 0;
-            bool flag = false;
-
-            for (size_t i = 0; i < xhat.size(); ++i) {
-                double distance = l2_distance(robot_state.x_, robot_state.y_, xhat[i], yhat[i]);
-
-                lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
-
-                if (distance >= 0.2 * 0.2) {
-                    double probabilities = std::exp(-0.05 * n);
-                    if (Antipatrea::RandomUniformReal() < probabilities) {
-                        local_goal_point.push_back(lg);
-                        local_goal_point_odom.push_back({xhat[i], yhat[i]});
-                    }
-
-                    if (probabilities <= 0.3) {
-                        setLocalGoal(lg, xhat[i], yhat[i]);
-                        flag = true;
-                        break;
-                    }
-
-                    ++n;
-                }
-            }
-
-            if (!flag) {
-                lg = transform_lg(global_goal[0], global_goal[1], robot_state.x_, robot_state.y_, robot_state.theta_);
-
-                local_goal = lg;
-                local_goal_odom = {global_goal[0], global_goal[1]};
-            }
-
-            view_Goal(goals, local_goal_odom);
-        }
-    }
-}
 
 void Robot_config::robotStatusCallback(const nav_msgs::Odometry::ConstPtr &msg) {
     double q1 = msg->pose.pose.orientation.x;
@@ -193,7 +69,7 @@ void Robot_config::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &msg
 
             last_valid_point = {laser_x, laser_y};
 
-            if (angle >= -M_PI_4 && angle <= M_PI_4) {
+            if (angle >= -M_PI/4 && angle <= M_PI/4) {
                 front_obs = std::min(front_obs, static_cast<double>(range));
             }
         }
@@ -207,9 +83,9 @@ void Robot_config::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &msg
 void Robot_config::costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg) {
     costmapData.clear();
 
-    // if (getRobotState() == LOW_SPEED_PLANNING || getRobotState() == NORMAL_PLANNING) {
-    //     return;
-    // }
+    if (getRobotState() == LOW_SPEED_PLANNING || getRobotState() == NORMAL_PLANNING) {
+        return;
+    }
 
     const int width = msg->info.width;
     const int height = msg->info.height;
@@ -250,10 +126,7 @@ void Robot_config::costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
                 }
             }
         }
-        auto a = 10;
     }
-
-
 }
 
 void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
@@ -299,8 +172,9 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
 
     bool flag = false;
     double thresholdSq = 0;
+    double length = 0;
 
-    for (size_t i = 0; i < xhat.size(); ++i) {
+    for (size_t i = 1; i < xhat.size(); ++i) {
         if (last_point[0] != INFINITY) {
             double dx = xhat[i] - last_point[0];
             double dy = yhat[i] - last_point[1];
@@ -316,13 +190,17 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
             last_point = {xhat[i], yhat[i]};
         }
 
-        double distance = l2_distance(robot_state.x_, robot_state.y_, xhat[i], yhat[i]);
+        double dist = l2_distance(xhat[i], yhat[i], xhat[i - 1],yhat[i - 1]);
+
+        length += dist;
+
+        // double distance = l2_distance(robot_state.x_, robot_state.y_, xhat[i], yhat[i]);
 
         if (getAlgorithm() == DWA || getAlgorithm() == DDPDWA) {
             v = 1.5;
             thresholdSq = 2 * v + 1;
 
-            if (distance >= thresholdSq * thresholdSq && flag == false) {
+            if (length >= thresholdSq && flag == false) {
                 lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                 setLocalGoal(lg, xhat[i], yhat[i]);
                 flag = true;
@@ -332,7 +210,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
             v = 2;
             thresholdSq = 2 * v + 1;
 
-            if (distance >= thresholdSq * thresholdSq && flag == false) {
+            if (length >= thresholdSq && flag == false) {
                 lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                 setLocalGoal(lg, xhat[i], yhat[i]);
                 flag = true;
@@ -342,7 +220,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
             if (getRobotState() == NORMAL_PLANNING) {
                 v = 1.5;
                 thresholdSq = 2 * v + 1;
-                if (distance >= thresholdSq * thresholdSq && flag == false) {
+                if (length >= thresholdSq && flag == false) {
                     lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                     setLocalGoal(lg, xhat[i], yhat[i]);
                     flag = true;
@@ -371,7 +249,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
 
                 thresholdSq = 2 * v + 0.25;
 
-                if (distance >= thresholdSq * thresholdSq && flag == false) {
+                if (length >= thresholdSq && flag == false) {
                     lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                     setLocalGoal(lg, xhat[i], yhat[i]);
                     flag = true;
@@ -397,16 +275,16 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
             } else if (getRobotState() == NO_MAP_PLANNING){
                 v = 1;
                 thresholdSq = v;
-                if (distance >= thresholdSq * thresholdSq && flag == false) {
+                if (length >= thresholdSq && flag == false) {
                     lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                     setLocalGoal(lg, xhat[i], yhat[i]);
                     flag = true;
                     break;
                 }
             }else {
-                v = 1;
+                v = 0.8;
                 thresholdSq = v;
-                if (distance >= thresholdSq * thresholdSq && flag == false) {
+                if (length >= thresholdSq && flag == false) {
                     lg = transform_lg(xhat[i], yhat[i], robot_state.x_, robot_state.y_, robot_state.theta_);
                     setLocalGoal(lg, xhat[i], yhat[i]);
                     flag = true;
@@ -465,6 +343,10 @@ void Robot_config::goalCallback(const move_base_msgs::MoveBaseActionGoal::ConstP
 }
 
 void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
+
+    if (getAlgorithm() == DWA || getAlgorithm() == DDPDWA || getAlgorithm() == LuPlanner || getAlgorithm() == DDPLuPlanner)
+       return;
+
     double linear_speed = fabs(getPoseState().velocity_);
 
     double LOW_SPEED_THRESHOLD = v * 0.8 + 0.05;
@@ -504,20 +386,20 @@ void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
             low_speed_timer_active = false;
         }
 
-        static constexpr double BRAKE_WAIT_TIME = 0.6; // 触发 BRAKE_PLANNING 的时间
+        static constexpr double BRAKE_WAIT_TIME = 0.5; // 触发 BRAKE_PLANNING 的时间
         if (linear_speed < MIN_SPEED) {
             if (!break_speed_timer_active) {
                 stopped_time = ros::Time::now();
                 break_speed_timer_active = true;
             } else if ((ros::Time::now() - stopped_time).toSec() > BRAKE_WAIT_TIME * STOPPED_TIME_THRESHOLD) {
-                ROS_INFO("The robot needs to brake after 1 second in low speed");
+                ROS_INFO("The robot needs to brake after 0.5 second in low speed");
                 setRobotState(BRAKE_PLANNING);
                 break_speed_timer_active = false;
             }
         } else {
             break_speed_timer_active = false;
         }
-    } else {
+    } else {  // recover
         static constexpr double RECOVERY_WAIT_TIME = 8.0;
         if (linear_speed < MIN_SPEED) {
             if (!is_stopped) {
@@ -532,50 +414,6 @@ void Robot_config::velocityCallback(const geometry_msgs::Twist &cmd_vel) {
             is_stopped = false;
         }
     }
-
-
-    // //double linear_speed = fabs(getPoseState().velocity_);
-    // double linear_speed = fabs(cmd_vel.linear.x);
-    // if (getRobotState() == NORMAL_PLANNING) {
-    //     low_speed_timer_active = false;
-    // }else if (getRobotState() == LOW_SPEED_PLANNING) {
-    //     if (linear_speed >= 0.7) {
-    //         if (!low_speed_timer_active) {
-    //             low_speed_start_time = ros::Time::now();
-    //             low_speed_timer_active = true;
-    //         }else if ((ros::Time::now() - low_speed_start_time).toSec() >= 0.5) {
-    //             ROS_INFO("The robot is in normal state after 0.5 second in low speed.");
-    //             setRobotState(NORMAL_PLANNING);
-    //             low_speed_timer_active = false;
-    //         }
-    //     }else {
-    //         low_speed_timer_active = false;
-    //     }
-    //
-    //     if (linear_speed < MIN_SPEED) {
-    //         if (!is_stopped) {
-    //             stopped_time = ros::Time::now();
-    //             is_stopped = true;
-    //         } else if ((ros::Time::now() - stopped_time).toSec() > 1 * STOPPED_TIME_THRESHOLD) {
-    //             ROS_INFO("The robot needs to brake after 1 second in low speed");
-    //             setRobotState(BRAKE_PLANNING);
-    //         }
-    //         return;
-    //     }
-    // }else {
-    //     if (linear_speed < MIN_SPEED) {
-    //         if (!is_stopped) {
-    //             stopped_time = ros::Time::now();
-    //             is_stopped = true;
-    //         } else if ((ros::Time::now() - stopped_time).toSec() > 8 * STOPPED_TIME_THRESHOLD) {
-    //             ROS_INFO("Clean the costmap");
-    //             triggerRecovery();
-    //         }
-    //         return;
-    //     }
-    // }
-    //
-    //  resetStoppedStatus();
 }
 
 void Robot_config::triggerRecovery() {
@@ -583,10 +421,9 @@ void Robot_config::triggerRecovery() {
     if (clear_costmaps_clt.call(srv)) {
         ROS_INFO("Recovery behavior triggered.");
         local_goal_odom.clear();
-        setLocalGoal();
-    } else {
+    } else
         ROS_ERROR("Failed to call clear_costmaps service.");
-    }
+
     resetStoppedStatus();
 }
 
@@ -598,15 +435,12 @@ void Robot_config::resetStoppedStatus() {
 }
 
 bool Robot_config::setup() {
-    data_ready = false;
-
     if (global_goal_odom.empty()) {
         global_goal_odom = {0, 10};
         setRobotState(NORMAL_PLANNING);
     }
 
     if (getRobotState() != INITIALIZING && getPoseState().valid_ && getGoal) {
-        data_ready = true;
         return true;
     }
 
@@ -676,37 +510,6 @@ Robot_config::RobotBox::RobotBox(double x_min_, double x_max_, double y_min_, do
     : x_max(x_max_), x_min(x_min_), y_min(y_min_), y_max(y_max_) {
 }
 
-Robot_config::RobotBox Robot_config::calculateMovingBoundingBox(const PoseState &state, double robot_width,
-                                                                double robot_length) {
-    RobotBox bbox;
-
-    double half_width = robot_width / 2.0;
-    double half_length = robot_length / 2.0;
-
-    bbox.front_left = {
-        state.x_ + half_length * std::cos(state.theta_) - half_width * std::sin(state.theta_),
-        state.y_ + half_length * std::sin(state.theta_) + half_width * std::cos(state.theta_)
-    };
-
-
-    bbox.front_right = {
-        state.x_ + half_length * std::cos(state.theta_) + half_width * std::sin(state.theta_),
-        state.y_ + half_length * std::sin(state.theta_) - half_width * std::cos(state.theta_)
-    };
-
-    bbox.rear_left = {
-        state.x_ - half_length * std::cos(state.theta_) - half_width * std::sin(state.theta_),
-        state.y_ - half_length * std::sin(state.theta_) + half_width * std::cos(state.theta_)
-    };
-
-    bbox.rear_right = {
-        state.x_ - half_length * std::cos(state.theta_) + half_width * std::sin(state.theta_),
-        state.y_ - half_length * std::sin(state.theta_) - half_width * std::cos(state.theta_)
-    };
-
-    return bbox;
-}
-
 void Robot_config::setLaserSize() {
     double min_x = FLT_MAX;
     double min_y = FLT_MAX;
@@ -731,17 +534,11 @@ void Robot_config::setLaserSize() {
 }
 
 Robot_config::Robot_config()
-    : data_ready(false),
-      has_reach(false),
-      algorithm(DWA),
+    : algorithm(DWA),
       currentState(INITIALIZING),
       currentMap(ONLY_LASER_RECEIVED),
       getGoal(false),
       canBeSolved(true),
-      useSim(false),
-      rotating(true),
-      //isStatusChanged(false),
-      lastSTATE(0),
       rotating_angle(0.0),
       los(2),
       latter_obs(INFINITY),
@@ -751,6 +548,8 @@ Robot_config::Robot_config()
     global_goal.reserve(2);
     local_goal.reserve(2);
     local_goal_odom.reserve(2);
+
+    recover_times = 0;
 
     local_goal = {0, 0};
     robot_state = {0, 0, 0, 0, 0, false};
@@ -765,7 +564,6 @@ Robot_config::Robot_config()
     velocity_sub = nh.subscribe("/cmd_vel", 10, &Robot_config::velocityCallback, this);
     global_path_sub = nh.subscribe<nav_msgs::Path>("/move_base/NavfnROS/plan", 10, &Robot_config::globalPathCallback,
                                                    this);
-
 
     trajectory_pub = nh.advertise<nav_msgs::Path>("trajectory", 10);
     global_path_pub = nh.advertise<nav_msgs::Path>("global_path", 10);

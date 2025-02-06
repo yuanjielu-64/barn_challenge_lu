@@ -118,27 +118,12 @@ namespace Antipatrea {
 
         virtual void publishCommand(geometry_msgs::Twist &cmd_vel, double linear, double angular);
 
-        virtual bool hasRotateFirst(PoseState &state, PoseState &state_odom, double angle_to_goal);
-
-        virtual double recover(PoseState &state, PoseState &state_odom,
-                              std::pair<std::vector<PoseState>, bool> &best_traj, bool &results);
-
-        virtual bool collisionCheck(std::vector<PoseState> &trajectory);
-
         virtual double calculateDistanceToCarEdge(
         double carX, double carY, double cosTheta, double sinTheta,
         double halfLength, double halfWidth, const std::vector<double>& obs);
 
         virtual bool mppi_planning(PoseState &state, PoseState &state_odom,
                                   std::pair<std::vector<PoseState>, bool> &best_traj, double dt);
-
-        virtual RobotBox calculateMovingBoundingBox(const PoseState &state1, const PoseState &state2,
-                                                    double robot_width, double robot_length);
-
-        virtual bool isBoxIntersectingBox(const RobotBox &bbox1, const std::vector<double> &obs) {
-            return !(bbox1.x_max < obs[0] || bbox1.x_min > obs[0] ||
-                     bbox1.y_max < obs[1] || bbox1.y_min > obs[1]);
-        }
 
         virtual std::pair<std::vector<PoseState>, std::vector<PoseState> > generateTrajectory(
             PoseState &state, PoseState &state_odom, double angular_velocity);
@@ -160,30 +145,6 @@ namespace Antipatrea {
                                      thread_trajectories,
                                      std::vector<std::vector<std::pair<double, double>>> &thread_pairs);
 
-        virtual std::vector<double> calculateSGCoefficients(int window_size, int poly_order);
-
-        virtual bool invertMatrix(std::vector<std::vector<double>>& mat);
-
-        virtual void getTrajBySavitzkyGolayFilter(std::pair<std::vector<PoseState>, std::vector<PoseState>> &trajectories) {
-            std::vector<double> x;
-            std::vector<double> y;
-
-            for (auto & i : trajectories.first) {
-                x.push_back(i.x_);
-                y.push_back(i.y_);
-            }
-
-            std::vector<double> x_ = savitzkyGolayFilter(x, 5, 2);
-            std::vector<double> y_ = savitzkyGolayFilter(y, 5, 2);
-
-            for (int i = 0; i < trajectories.first.size(); i++) {
-                trajectories.first[i].x_ = x_[i];
-                trajectories.first[i].y_ = y_[i];
-            }
-        }
-
-        virtual std::vector<double> savitzkyGolayFilter(const std::vector<double>& data, int window_size, int poly_order);
-
         virtual void normalize_costs(std::vector<Cost> &costs);
 
         virtual Cost evaluate_trajectory(std::pair<std::vector<PoseState>, std::vector<PoseState> > &traj, double &dist,
@@ -192,12 +153,7 @@ namespace Antipatrea {
         virtual Cost evaluate_trajectory(std::vector<PoseState> &traj, double &dist,
                                          std::vector<double> &last_position);
 
-        virtual double calc_to_goal_cost(const std::vector<PoseState> &traj, double &dist,
-                                         std::vector<double> &last_position);
-
         virtual double calc_to_goal_cost(const std::vector<PoseState> &traj);
-
-        virtual std::vector<double> cal_weight_output_commands(std::vector<PoseState> &traj);
 
         virtual double calc_speed_cost(const std::vector<PoseState> &trajs);
 
@@ -212,8 +168,6 @@ namespace Antipatrea {
         virtual double calc_angular_velocity(const std::vector<PoseState> &traj);
 
         virtual double calc_path_cost(const std::vector<PoseState> &traj);
-
-        virtual double calc_dist_to_path(const std::vector<double> &state);
 
         virtual Window calc_dynamic_window(PoseState &state, double dt);
 
@@ -230,8 +184,6 @@ namespace Antipatrea {
         bool use_angular_cost_ = false;
         bool use_space_cost_ = false;
 
-        double angle_to_goal_ = M_PI / 2;
-
         double robot_radius_ = 0.03;
         double distance = 0.0;
 
@@ -240,21 +192,18 @@ namespace Antipatrea {
 
         int nr_pairs_ = 20;
         int nr_steps_ = 20;
-        double linear_stddev = 0.1;
+        double linear_stddev = 0.05;
         double angular_stddev = 0.05;
 
         int v_steps_ = 20;
         int w_steps_ = 20;
-        int state_dims = 5;
 
         PoseState parent;
         PoseState parent_odom;
 
-        std::vector<std::vector<double> > obstacles;
         std::vector<double> global_goal;
         std::vector<double> local_goal;
         std::vector<double> timeInterval;
-        std::vector<double> weights;
 
         double to_goal_cost_gain_ = 0.8;
         double obs_cost_gain_ = 0.5;
@@ -274,8 +223,6 @@ namespace Antipatrea {
 
         double dt;
         double n;
-
-        std::mutex mtx;
     };
 
     ClassContainer(DDP, m_Milan);

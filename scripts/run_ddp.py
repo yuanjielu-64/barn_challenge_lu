@@ -142,7 +142,7 @@ if __name__ == "__main__":
     start_time_cpu = time.time()
     collided = False
 
-    while compute_distance(goal_coor, curr_coor) > 4 and not collided and curr_time - start_time < 50:
+    while compute_distance(goal_coor, curr_coor) > 4 and not collided and curr_time - start_time < 100:
         curr_time = rospy.get_time()
         pos = gazebo_sim.get_model_state().pose.position
         curr_coor = (pos.x, pos.y)
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     success = False
     if collided:
         status = "collided"
-    elif curr_time - start_time >= 50:
+    elif curr_time - start_time >= 100:
         status = "timeout"
     else:
         status = "succeeded"
@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
     with open(args.out, "a") as f:
         f.write("%d %d %d %d %.4f %.4f %.4f\n" % (
-        args.world_idx, success, collided, (actual_time) >= 50, actual_time, optimal_time, nav_metric))
+        args.world_idx, success, collided, (actual_time) >= 100, actual_time, optimal_time, nav_metric))
 
     gazebo_process.terminate()
     gazebo_process.wait()

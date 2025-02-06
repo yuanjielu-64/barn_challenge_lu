@@ -8,21 +8,17 @@
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Path.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <vector>
 #include <utility>
 #include <nav_msgs/Odometry.h>
-#include <mutex>
-#include <std_msgs/Float64.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d_publisher.h>
 #include <move_base_msgs/MoveBaseActionGoal.h>
 #include <visualization_msgs/Marker.h>
 #include <numeric>
 #include "Utils/Stats.hpp"
-#include <nav_msgs/Path.h>
 
 class Robot_config {
 public:
@@ -89,8 +85,6 @@ public:
         ROTATE_PLANNING,
         BACKWARD,
         FORWARD,
-
-
         TEST,
         IDIE
         // INITIALIZING,  // 0
@@ -109,13 +103,6 @@ public:
         ONLY_LASER_RECEIVED,    // 1
         NO_ANY_RECEIVED         // 2
     };
-
-    bool planning() const {
-        if (getRobotState() == INITIALIZING || getRobotState() == IDIE)
-            return false;
-        else
-            return true;
-    }
 
     void setAlgorithm(Algorithm a) {
         algorithm = a;
@@ -161,9 +148,6 @@ public:
         return true;
     }
 
-    void transformToBaseLink(double x_odom, double y_odom, double& x_base_link, double& y_base_link);
-
-    double getPathFromGlobalPlanner(PoseState &state);
 
     void globalPathCallback(const nav_msgs::Path::ConstPtr& msg);
 
@@ -182,8 +166,6 @@ public:
     void update_angular_velocity();
 
     void view_Goal(std::vector<double> &goal, std::vector<double> &goal1) const;
-
-    void setLocalGoal();
 
     void setLocalGoal(std::vector<double> &lg, double x, double y) {
         local_goal_odom.clear();
@@ -272,11 +254,7 @@ public:
         return costmap;
     }
 
-    bool useSim;
-
-    bool rotating;
     double rotating_angle;
-    int lastSTATE;
 
     double dt{};
     double latter_obs{};
@@ -288,8 +266,6 @@ public:
 
     ros::NodeHandle nh;
 
-    bool data_ready{};
-    bool has_reach{};
     bool canBeSolved{};
     bool getGoal{};
 
@@ -318,6 +294,13 @@ public:
 
     double v = 1;
     double w = 1;
+
+    int recover_times = 0;
+    int re = 1;
+
+    ros::Time last_cover_exit_time = ros::Time::now();
+    int recover_to_low_count = 0;
+    double dynamic_recovery_wait_time = 0.5;
 
 protected:
 
@@ -366,7 +349,7 @@ protected:
 
     ros::Time stopped_time;
     ros::Time last_time;
-    const double MIN_SPEED = 0.05;
+    const double MIN_SPEED = 0.15;
     const double STOPPED_TIME_THRESHOLD = 1.0;
 
 };

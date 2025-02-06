@@ -1,14 +1,9 @@
 #!/bin/bash
-
-killall -9 rosmaster
-
-killall gzclient
-
-killall gzserver
-
-for i in {299..1} ; do
-    for j in {1..1} ; do            
-        python run_ddp.py --world_idx $i --out "out_ddp_v=1.5_ddp"
-        sleep 2
-    done
+for i in {0..49} ; do
+    n=`expr $i \* 6` # 50 test BARN worlds with equal spacing indices: [0, 6, 12, ..., 294]
+        for j in {1..10} ; do            
+            # run the test
+            python3 run.py --world_idx $n
+            sleep 5
+        done
 done

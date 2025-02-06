@@ -28,7 +28,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -284,7 +284,7 @@ Visualization Manager:
       Marker Topic: /global_goal
       Name: Marker
       Namespaces:
-        point_marker: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -292,7 +292,7 @@ Visualization Manager:
       Marker Topic: /local_goal
       Name: Marker
       Namespaces:
-        point_marker: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1

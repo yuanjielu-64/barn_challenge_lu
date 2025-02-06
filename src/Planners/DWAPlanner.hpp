@@ -156,30 +156,6 @@ namespace Antipatrea {
                                      std::vector<std::pair<std::vector<PoseState>, std::vector<PoseState> > > &
                                      thread_trajectories);
 
-        virtual double calc_to_goal_cost(const std::vector<PoseState> &traj, double &dist,
-                                         std::vector<double> &last_position) {
-            if (use_goal_cost_ == false)
-                return 0.0;
-
-            if (dist == -1 && last_position.empty()) {
-                PoseState odom_state = traj[0];
-                dist = robot->getPathFromGlobalPlanner(odom_state);
-                last_position.push_back(traj[traj.size() - 1].x_);
-                last_position.push_back(traj[traj.size() - 1].y_);
-                return dist;
-            }
-
-            if (traj[traj.size() - 1].pose()[2] >= 0 && traj[traj.size() - 1].pose()[2] <= M_PI) {
-                return dist + Algebra::PointDistance(2, &traj[traj.size() - 1].pose()[0], &last_position[0]);
-            }
-
-            if (traj[traj.size() - 1].pose()[2] < 0 && traj[traj.size() - 1].pose()[2] >= -M_PI) {
-                return dist - Algebra::PointDistance(2, &traj[traj.size() - 1].pose()[0], &last_position[0]);
-            }
-
-            return 0;
-        }
-
         virtual double calc_to_goal_cost(const std::vector<PoseState> &traj) {
             if (use_goal_cost_ == false)
                 return 0.0;

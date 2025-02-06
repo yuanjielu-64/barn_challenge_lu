@@ -163,9 +163,6 @@ namespace Antipatrea {
         virtual Cost evaluate_trajectory(std::vector<PoseState> &traj, double &dist,
                                          std::vector<double> &last_position);
 
-        virtual double calc_to_goal_cost(const std::vector<PoseState> &traj, double &dist,
-                                         std::vector<double> &last_position);
-
         virtual double calc_to_goal_cost(const std::vector<PoseState> &traj);
 
         virtual std::vector<double> cal_weight_output_commands(std::vector<PoseState> &traj);

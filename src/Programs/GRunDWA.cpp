@@ -31,7 +31,9 @@ extern "C" int GRunDWA(int argc, char **argv) {
         robot.getCostMap()->updateMap();
         ros::spinOnce();
 
-        if (!robot.data_ready) {
+        if (!robot.setup()) {
+            if (robot.getRobotState() == Robot_config::BRAKE_PLANNING)
+                rate.sleep();
             continue;
         }
 

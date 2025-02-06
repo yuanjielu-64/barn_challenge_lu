@@ -1,4 +1,13 @@
+<p align="center">
+  <img width = "100%" src='res/BARN_Challenge.png' />
+  </p>
+
+
 # BARN Navigation Challenge for 2025
+
+## Language
+This code is written in C++ and can be integrated with Python
+
 
 ## Requirements
 
@@ -102,6 +111,16 @@ Where &i is the world index you want to test.
 ```
 ./test.sh
 ```
+
+3. If you want to run with DWA, DDPDWAPlanner, LuPlanner and DDPLuPlanner, please change /launch/gazebo_launch_ddp.launch at line 44
+Please note that MPPIPlanner and DDPMPPIPlanner represent LuPlanner and DDPLuPlanner respectively, not the MPPI algorithm
+
+```
+args="RunMP $(find barn_challenge_lu)/data/ParamsForJackalGlobal.txt UseMP DWAPlanner"/>
+args="RunMP $(find barn_challenge_lu)/data/ParamsForJackalGlobal.txt UseMP DDPDWAPlanner"/>
+args="RunMP $(find barn_challenge_lu)/data/ParamsForJackalGlobal.txt UseMP MPPIPlanner"/>
+args="RunMP $(find barn_challenge_lu)/data/ParamsForJackalGlobal.txt UseMP DDPMPPIPlanner"/>
+``
 
 ### Contribution
 If you would like to contribute to this project, feel free to submit a pull request or open an issue on GitHub.
