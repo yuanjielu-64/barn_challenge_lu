@@ -113,6 +113,7 @@ Where &i is the world index you want to test.
 ```
 
 3. If you want to run with DWA, DDPDWAPlanner, LuPlanner and DDPLuPlanner, please change /launch/gazebo_launch_ddp.launch at line 44
+
 Please note that MPPIPlanner and DDPMPPIPlanner represent LuPlanner and DDPLuPlanner respectively, not the MPPI algorithm
 
 ```
