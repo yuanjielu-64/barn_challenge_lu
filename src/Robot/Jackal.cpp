@@ -295,7 +295,7 @@ void Robot_config::globalPathCallback(const nav_msgs::Path::ConstPtr &msg) {
     }
 
     if (!flag) {
-        lg = transform_lg(global_goal[0], global_goal[1], robot_state.x_, robot_state.y_, robot_state.theta_);
+        lg = transform_lg(global_goal_odom[0], global_goal_odom[1], robot_state.x_, robot_state.y_, robot_state.theta_);
         setLocalGoal(lg, global_goal_odom[0], global_goal_odom[1]);
     }
 
